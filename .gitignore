@@ -1,18 +1,5 @@
 
-# Root/runtime env files
-.env
-.env.*
-!.env.example
-!.env.docker.example
-!.env.production.example
-!.env.*.example
 
-**/.env
-**/.env.*
-!**/.env.example
-!**/.env.docker.example
-!**/.env.production.example
-!**/.env.*.example
 
 node_modules
 **/node_modules
@@ -26,7 +13,7 @@ coverage
 .pnpm-store
 **/.pnpm-store
 
-*.log
+*.logs
 
 # nested repository backups
 **/.git.backup
@@ -45,3 +32,7 @@ lsp
 node
 image_cache
 audio_cache
+.skills_prompt_snapshot.json
+channel_directory.json
+gateway_state.json
+processes.json
