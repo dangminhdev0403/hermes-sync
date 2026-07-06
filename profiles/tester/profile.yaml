@@ -1,0 +1,4 @@
+description: Tests web applications by exploring bundled codebases and running browser-style
+  validation flows. Best for finding UI, integration, and regression issues in web
+  apps.
+description_auto: false

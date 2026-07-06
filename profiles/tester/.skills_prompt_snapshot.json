@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "manifest": {
+    "autonomous-ai-agents\\codex\\SKILL.md": [
+      1783247824858869400,
+      5535
+    ],
+    "c\\SKILL.md": [
+      1782684619965197700,
+      11204
+    ],
+    "webapp-testing\\SKILL.md": [
+      1783078334435380500,
+      4008
+    ]
+  },
+  "skills": [
+    {
+      "skill_name": "codex",
+      "category": "autonomous-ai-agents",
+      "frontmatter_name": "codex",
+      "description": "Delegate coding to OpenAI Codex CLI (features, PRs).",
+      "platforms": [
+        "linux",
+        "macos",
+        "windows"
+      ],
+      "conditions": {
+        "fallback_for_toolsets": [],
+        "requires_toolsets": [],
+        "fallback_for_tools": [],
+        "requires_tools": []
+      }
+    },
+    {
+      "skill_name": "c",
+      "category": "c",
+      "frontmatter_name": "repomix-explorer",
+      "description": "Analyze or explore a codebase (remote or local repository...",
+      "platforms": [],
+      "conditions": {
+        "fallback_for_toolsets": [],
+        "requires_toolsets": [],
+        "fallback_for_tools": [],
+        "requires_tools": []
+      }
+    },
+    {
+      "skill_name": "webapp-testing",
+      "category": "webapp-testing",
+      "frontmatter_name": "webapp-testing",
+      "description": "Toolkit for interacting with and testing local web applic...",
+      "platforms": [],
+      "conditions": {
+        "fallback_for_toolsets": [],
+        "requires_toolsets": [],
+        "fallback_for_tools": [],
+        "requires_tools": []
+      }
+    }
+  ],
+  "category_descriptions": {}
+}

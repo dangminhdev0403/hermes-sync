@@ -1,0 +1,7 @@
+For this user, QA/tester code review workflows should run the local SonarQube review gate for frontend/backend cleanliness only during explicit code review/tester verification, not during ordinary implementation. Local helper: ~/AppData/Local/hermes/scripts/sonarqube-review.sh; SonarQube UI/API: http://localhost:9000.
+§
+User prefers kanban work to follow a confirmation gate: before creating/dispatching kanban tasks, produce a detailed plan, map each specialist profile/deệ to suitable skills, list the selected skills for review, and ask for confirmation before execution.
+§
+User permits the agent to add, edit, and update specialist skills for backend/frontend/dev-ops/tester when it materially strengthens the project, after careful review. The agent should also keep corresponding skill-[specialist] synchronization skills updated to prevent specialist skill drift/missing skills.
+§
+When the user says “đồng bộ skills đệ” or similar wording, treat it as a request to repeat the specialist skill synchronization workflow: inventory skills/profiles, update skill-backend/skill-frontend/skill-dev-ops/skill-tester manifests, copy required skill directories into each specialist profile, and verify manifests/profile skill files.
