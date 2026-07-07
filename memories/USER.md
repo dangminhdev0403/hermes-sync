@@ -1,0 +1,1 @@
+User expects Hermes skill/profile hygiene tasks to be acted on directly: inspect the real filesystem, move misplaced skill folders/files into canonical locations, patch references, create backups when reorganizing, and verify with a skill-load smoke test before reporting.

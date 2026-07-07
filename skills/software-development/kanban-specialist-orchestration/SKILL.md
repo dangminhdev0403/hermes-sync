@@ -119,6 +119,33 @@ For explicit code review or tester verification of frontend/backend code, assign
 
 Treat SonarQube as a review gate, not an implementation-time background process. It should run during tester/code-review verification or when the user explicitly asks for it.
 
+
+## Review-Required Handoff Protocol
+
+`review-required` is a **handoff signal**, not a dependency-blocking failure. When an implementation worker has completed the requested change and only wants downstream QA/code review, the orchestrator must not leave that implementation parent in `blocked` if tester/reviewer children depend on it.
+
+Use this decision table whenever an implementation task returns `blocked` or a summary beginning with `review-required`:
+
+| Situation | Orchestrator action | Why |
+|---|---|---|
+| Implementation reports work complete, local checks passed, and asks for tester/code review | `hermes kanban complete <implementation-task> --summary <handoff>` then `hermes kanban dispatch --json` | Opens the dependency gate so tester/reviewer children run. |
+| Implementation reports uncertainty, failing checks, missing credentials, or incomplete work | Keep it `blocked`, inspect `hermes kanban runs/log`, and send explicit feedback or create a fix task | This is a real blocker, not a review handoff. |
+| Human approval is required before *shipping* but QA is still required | Complete the implementation parent with a clear "not shipped; QA required" summary and model approval as a separate final gate task | Prevents tester from waiting forever behind the same parent. |
+
+Required recovery loop for parent/child deadlocks:
+
+```bash
+hermes kanban show <parent_task>
+hermes kanban show <child_task>
+hermes kanban runs <parent_task>
+# If parent is only review-required after completed work:
+hermes kanban complete <parent_task> --result "Implementation handoff accepted for downstream QA" --summary "<changed files, checks, QA instructions>"
+hermes kanban dispatch --json
+hermes kanban show <child_task>
+```
+
+Do not rely on memory or assumptions: always inspect the parent summary/runs before completing it. The completion summary must preserve changed files, checks run, known risks, and exact QA instructions so tester has enough context.
+
 ## Synchronization Policy
 
 The orchestrator may add, patch, or synchronize specialist skills when the change materially improves project reliability, quality, or delegation correctness. Before changing skills:
@@ -132,17 +159,28 @@ The orchestrator may add, patch, or synchronize specialist skills when the chang
 ## Common Pitfalls
 
 1. **Dispatching too early.** Creating or dispatching kanban tasks before the user confirms violates the workflow. Always show the plan first.
-2. **Attaching irrelevant skills.** Large skill sets add noise. Attach a focused subset from the specialist manifest.
+2. **Attaching irrelevant or unverified skill names.** Large skill sets add noise, and kanban workers can fail before doing any work if the exact `--skill` names do not resolve in the target profile. Attach a focused subset from the specialist manifest, then smoke-test exact names with the target profile before dispatch when the task depends on explicit skills:
+   ```bash
+   hermes -p <profile> chat -q "Skill load smoke test. Reply OK." --skills skill-a,skill-b -Q
+   ```
+   If a skill has both display name and slug/frontmatter aliases, prefer the name that the target profile's CLI accepts. When in doubt, put the procedure in the task body instead of forcing a fragile skill flag.
 3. **Skipping manifest checks.** If the specialist lacks a skill, the worker may crash or miss important procedure. Check before dispatch.
-4. **Making tester an implementer.** Tester should verify and report unless explicitly assigned a fix task.
-5. **Treating SonarQube as always-on.** SonarQube is for review/tester verification unless explicitly requested during implementation.
-6. **Letting manifests drift.** When adding a new reusable workflow for a specialist, update both the class-level skill and the relevant `skill-<specialist>` manifest.
+4. **Confusing dependency gating with worker failure.** A child tester task stays `todo` until its parent is `done`; a tester task that becomes `blocked` after dispatch needs `hermes kanban runs <id>` and `hermes kanban log <id>` before assuming the implementation is the problem.
+5. **Leaving review-required blocks unresolved.** Implementation workers may block with `review-required` after successful verification. Treat this as a handoff signal: inspect the run, complete the implementation parent with the handoff summary, and dispatch tester/reviewer children. Keep it blocked only when work is incomplete, checks failed, or the worker needs real input.
+6. **Making tester an implementer.** Tester should verify and report unless explicitly assigned a fix task.
+7. **Treating SonarQube as always-on.** SonarQube is for review/tester verification unless explicitly requested during implementation. If SonarQube is available but the skill flag is fragile, include the helper command and service facts in the tester task body rather than blocking dispatch on a scanner skill alias.
+8. **Letting manifests drift.** When adding a new reusable workflow for a specialist, update both the class-level skill and the relevant `skill-<specialist>` manifest.
+
+See `references/kanban-worker-skill-loader-pitfalls.md` for a concrete session example involving tester tasks, SonarQube, and `Unknown skill(s)` crashes.
 
 ## Verification Checklist
 
 - [ ] User saw and confirmed the kanban plan before side effects.
 - [ ] Each specialist has a clear responsibility and deliverable.
 - [ ] Skills were selected from the appropriate `skill-<specialist>` manifest.
+- [ ] Exact explicit skill names were smoke-tested in the target profile, or the procedure was embedded in the task body instead of passed as fragile `--skill` flags.
 - [ ] Dependencies prevent tester/reviewer tasks from running before implementation tasks complete.
+- [ ] `review-required` implementation parents with tester/reviewer children were completed with a handoff summary and followed by `hermes kanban dispatch --json`.
+- [ ] Blocked tasks were classified correctly: dependency wait, review-required handoff, incomplete work, missing input, or worker crash.
 - [ ] Any skill changes were synchronized to default and specialist profile skill trees.
 - [ ] Final response reports task IDs, assignees, and how to monitor progress.

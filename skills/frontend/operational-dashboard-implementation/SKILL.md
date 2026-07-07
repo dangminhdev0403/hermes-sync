@@ -176,6 +176,11 @@ Use skeleton/loading, error, and empty states. Do not hardcode fake numbers when
 
 - `references/vietsage-dashboard-session.md` captures a concrete VietSage hotel dashboard implementation and the user's architecture corrections.
 - `references/vietsage-owner-dashboard-request-lifecycle.md` captures the checked-out-stay filtering and missing owner detail route pitfall.
+- `references/full-width-admin-dashboard-refactor.md` captures the pattern for refactoring cramped/chaotic admin dashboards into full-width operational command centers.
+
+## Layout Pitfall: Cramped Admin Dashboards
+
+When a user complains that an admin/dashboard frontend is chaotic, incoherent, or visually "co lại / không giãn đúng màn hình", do not merely recolor cards or tweak copy. First inspect the app shell for centered marketing-page constraints such as `mx-auto max-w-*`. Authenticated operational dashboards usually need a full-viewport shell: persistent grouped sidebar, elastic main workspace (`minmax(0,1fr)`), sticky filters/search/actions, critical signals, central work queue/table, and supporting right rail. Preserve intentional density, but standardize radius, button vocabulary, semantic colors, and table overflow handling.
 
 ## Verification Pattern
 
