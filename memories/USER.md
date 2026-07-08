@@ -1,1 +1,3 @@
 User expects Hermes skill/profile hygiene tasks to be acted on directly: inspect the real filesystem, move misplaced skill folders/files into canonical locations, patch references, create backups when reorganizing, and verify with a skill-load smoke test before reporting.
+§
+User expects proactive completion reporting for kanban/“đệ” delegated tasks: after dispatching specialists, the agent should monitor/poll or otherwise track completion and immediately report frontend/tester results instead of waiting for the user to ask.
