@@ -9,3 +9,5 @@ When the user says “đồng bộ skills đệ” or similar wording, treat it 
 For this user’s projects, the agent and delegated specialist profiles must not modify a project’s package.json without asking first. Prefer installing/using dependency versions already synchronized in package.json; if package.json changes are needed, ask for explicit approval before editing.
 §
 When a new skill appears and its structure does not match the adopted skill-selection convention, the agent may read the full skill once, then refactor it to include a concise frontmatter description/selection summary and conforming structure for future use.
+§
+For Hermes sync git pushes, do not commit or push backups/ snapshots; ignore backup directories by default unless the user explicitly asks to version a specific backup.

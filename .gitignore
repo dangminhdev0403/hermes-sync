@@ -67,6 +67,10 @@ gateway_state.json
 channel_directory.json
 state/
 
+# Backups/snapshots are local safety artifacts; do not sync unless explicitly requested
+backups/
+**/backups/
+
 # Skill manager runtime metadata; keep actual skill content, ignore usage/cache state
 skills/.usage.json
 skills/.usage.json.lock
