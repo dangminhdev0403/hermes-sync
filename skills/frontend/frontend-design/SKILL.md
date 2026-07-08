@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+description: "Use when creating distinctive production-grade web pages, components, dashboards, landing pages, or HTML/CSS/React UI that should look polished rather than generic."
 license: Complete terms in LICENSE.txt
 ---
 
@@ -40,3 +40,11 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
 Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
+## When Replacing a Rejected UI with a Provided Template
+
+If the user says they dislike the current UI and provides a local template/reference directory, treat that template as the source of truth rather than inventing a new aesthetic. Inspect the template's design notes, HTML/code, and screenshots first; then replace the active UI with a close port of the template's layout, palette, typography, copy, and component order. Remove or decommission stale components from the old design so typecheck/build cannot keep failing on unused legacy files.
+
+For multi-page app templates, do not stop at the first visible dashboard screen. Inventory every template screen and map it to the intended app routes before declaring the replacement complete. Verify the active route placement explicitly: a dashboard template belongs under the requested feature route (for example `/admin`), not accidentally at home `/`; login/auth entry screens must be created when present in the template or requested by the user. Navigation tabs/sidebar items should point to real routes or clearly marked placeholders, and browser smoke tests should cover the home route, login route, the dashboard route, and at least two subroutes.
+
+See `references/stitch-template-replacement.md` for the detailed workflow and pitfalls from the EduManager Stitch dashboard replacement. See `references/edumanager-admin-routing-session.md` for the follow-up lesson on route placement, login bypass, and synchronizing template subpages.

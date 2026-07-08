@@ -159,6 +159,16 @@ Pick the closest existing category. Don't invent new top-level categories casual
 - **Adding supporting files:** `write_file` to `skills/<category>/<name>/references/<file>.md`, `templates/<file>`, or `scripts/<file>`. `skill_manage(action='write_file')` also works and enforces the references/templates/scripts/assets subdir allowlist.
 - **Always commit** the edit — in-repo skills are source, not runtime state.
 
+## New Skill Normalization Policy
+
+When a new skill appears and its structure does not match the adopted selection-first convention, it is allowed to read the full skill once to understand intent, scope, triggers, pitfalls, and workflow. Immediately after that first read, refactor the skill so future selection can happen from metadata/summary first:
+
+- Add or tighten frontmatter `description` as a concise trigger-focused summary.
+- Keep the description short enough for skill selection; put details in the body or linked references.
+- Normalize body structure toward `Overview`, `When to Use`, actionable workflow, pitfalls, and verification.
+- Regenerate/update any profile-level `SKILL_DESCRIPTIONS.md` or specialist manifest table that depends on the skill.
+- Validate frontmatter parse and smoke-test loading before reporting completion.
+
 ## Common Pitfalls
 
 1. **Using `skill_manage(action='create')` for an in-repo skill.** It writes to `~/.hermes/skills/`, not the repo tree. Use `write_file` for in-repo creation.

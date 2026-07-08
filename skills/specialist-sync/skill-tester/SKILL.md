@@ -27,18 +27,18 @@ This manifest keeps the `tester` specialist profile synchronized with the skills
 
 ## Canonical Skill Set
 
-| Skill path | Skill name |
-|---|---|
-| `dogfood` | dogfood |
-| `software-development/local-code-quality-gates` | local-code-quality-gates |
-| `sonarqube-scanner-skill` | SonarQube Scanner Skill |
-| `backend/requesting-code-review` | requesting-code-review |
-| `backend/test-driven-development` | test-driven-development |
-| `backend/systematic-debugging` | systematic-debugging |
-| `github/github-code-review` | github-code-review |
-| `github/codebase-inspection` | codebase-inspection |
-| `frontend/next-best-practices` | next-best-practices |
-| `frontend/design-taste-frontend` | design-taste-frontend |
+| Skill path | Skill name | Description |
+|---|---|---|
+| `dogfood` | dogfood | Exploratory QA of web apps: find bugs, evidence, reports. |
+| `software-development/local-code-quality-gates` | local-code-quality-gates | Use when setting up or running local static-analysis quality gates for code review, especially SonarQube-in-Docker review gates for frontend/backend cleanliness checks. |
+| `sonarqube-scanner-skill` | SonarQube Scanner Skill | Integrates SonarQube static analysis via the sonar-scanner CLI and SonarQube Web API. Fetches quality gate results from api/qualitygates/project_status, parses issues via api/issues/search, and maps findings to source lines for inline code review annotations. |
+| `backend/requesting-code-review` | requesting-code-review | Pre-commit review: security scan, quality gates, auto-fix. |
+| `backend/test-driven-development` | test-driven-development | TDD: enforce RED-GREEN-REFACTOR, tests before code. |
+| `backend/systematic-debugging` | systematic-debugging | 4-phase root cause debugging: understand bugs before fixing. |
+| `github/github-code-review` | github-code-review | Review PRs: diffs, inline comments via gh or REST. |
+| `github/codebase-inspection` | codebase-inspection | Inspect codebases w/ pygount: LOC, languages, ratios. |
+| `frontend/next-best-practices` | next-best-practices | Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling |
+| `frontend/design-taste-frontend` | design-taste-frontend | Use when building, redesigning, or reviewing frontend experiences that need stronger taste, anti-template design direction, hierarchy, and interface polish. |
 
 ## Operating Policy
 
@@ -79,3 +79,10 @@ When creating a kanban task, attach only the skills relevant to the specific car
 ```
 
 Do not blindly attach every skill if a narrower task only needs a subset.
+
+
+Fast selection index for this specialist is generated at:
+
+```text
+C:\Users\Admin\.hermes\profiles\tester\skills\SKILL_DESCRIPTIONS.md
+```

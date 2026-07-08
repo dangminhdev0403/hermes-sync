@@ -27,16 +27,16 @@ This manifest keeps the `dev-ops` specialist profile synchronized with the skill
 
 ## Canonical Skill Set
 
-| Skill path | Skill name |
-|---|---|
-| `dev-ops/repomix-explorer` | repomix-explorer |
-| `dev-ops/autonomous-ai-agents/codex` | codex |
-| `dev-ops/docker-expert` | docker-expert |
-| `dev-ops/local-docker-databases` | local-docker-databases |
-| `dev-ops/azure-kubernetes` | azure-kubernetes |
-| `dev-ops/azure-kubernetes/azure-kubernetes-automatic-readiness` | azure-kubernetes-automatic-readiness |
-| `backend/docker-development-workflows` | docker-development-workflows |
-| `software-development/local-code-quality-gates` | local-code-quality-gates |
+| Skill path | Skill name | Description |
+|---|---|---|
+| `dev-ops/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
+| `dev-ops/autonomous-ai-agents/codex` | codex | Delegate coding to OpenAI Codex CLI (features, PRs). |
+| `dev-ops/docker-expert` | docker-expert | You are an advanced Docker containerization expert with comprehensive, practical knowledge of container optimization, security hardening, multi-stage builds, orchestration patterns, and production deployment strategies based on current industry best practices. |
+| `dev-ops/local-docker-databases` | local-docker-databases | Set up, replace, and verify local development databases in Docker, especially PostgreSQL/MySQL/Redis-style services with durable volumes and connection details. |
+| `dev-ops/azure-kubernetes` | azure-kubernetes | Use when planning, creating, securing, operating, or cost-optimizing production Azure Kubernetes Service clusters, including SKU, networking, autoscaling, upgrades, and observability choices. |
+| `dev-ops/azure-kubernetes/azure-kubernetes-automatic-readiness` | azure-kubernetes-automatic-readiness | Use when assessing AKS Standard workloads and manifests for AKS Automatic compatibility, migration blockers, required fixes, and readiness reporting. |
+| `backend/docker-development-workflows` | docker-development-workflows | Design and implement Docker Compose development workflows for Node/NestJS/Next.js apps with databases, especially Windows + Docker Desktop + pnpm setups. |
+| `software-development/local-code-quality-gates` | local-code-quality-gates | Use when setting up or running local static-analysis quality gates for code review, especially SonarQube-in-Docker review gates for frontend/backend cleanliness checks. |
 
 ## Operating Policy
 
@@ -76,3 +76,10 @@ When creating a kanban task, attach only the skills relevant to the specific car
 ```
 
 Do not blindly attach every skill if a narrower task only needs a subset.
+
+
+Fast selection index for this specialist is generated at:
+
+```text
+C:\Users\Admin\.hermes\profiles\dev-ops\skills\SKILL_DESCRIPTIONS.md
+```
