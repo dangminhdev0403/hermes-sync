@@ -61,10 +61,12 @@ All four use `http://127.0.0.1:20128/v1`, `provider: custom`,
    smoke test. Before approval, a file-write request must return an inline plan
    ending in `NEEDS_CONFIRMATION`, create nothing, and create/attach no
    `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` artifact unless explicitly
-   requested. Reply once with `phê duyệt triển khai` in the same Hermes
-   session. The exact approved artifact must then be created and read back
-   immediately, without another `PLAN_ONLY` response or a second Codex
-   approval prompt.
+   requested. In the same Hermes session, express clear authorization to carry
+   out the approved work (wording is not a magic literal). The runtime must
+   classify the execution-approval intent, remove `PLAN_ONLY` in that same
+   turn, execute, and read back the exact artifact without another confirmation
+   prompt. Denial/hold intent must remain fail-closed, and approval wording
+   without a preceding `NEEDS_CONFIRMATION` boundary must not authorize work.
 
 ## Security and portability
 
