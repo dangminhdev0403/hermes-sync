@@ -29,6 +29,7 @@ This manifest keeps the `backend` specialist profile synchronized with the skill
 
 | Skill path | Skill name | Description |
 |---|---|---|
+| `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `backend/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
 | `backend/plan` | plan | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
 | `backend/nestjs-backend-integrations` | nestjs-backend-integrations | Implement external service integrations in NestJS/Prisma backends as asynchronous side effects without breaking core business writes. |
@@ -43,6 +44,7 @@ This manifest keeps the `backend` specialist profile synchronized with the skill
 
 ## Operating Policy
 
+- The confirmation gate applies to direct user chats as well as Kanban: inspect read-only, present a pro-max plan, and wait for explicit approval before any side effect.
 - Use repomix-explorer before planning or implementation on unfamiliar/large repositories.
 - Own backend API, service boundaries, data validation, integrations, RBAC/business permissions, and backend tests.
 - Run requesting-code-review before declaring backend code ready; include SonarQube only during explicit review/tester verification.
@@ -60,13 +62,13 @@ This manifest keeps the `backend` specialist profile synchronized with the skill
 The current synchronization source is the default profile skill tree:
 
 ```text
-C:/Users/Admin/AppData/Local/hermes/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/skills
 ```
 
 The synchronized specialist profile target is:
 
 ```text
-C:/Users/Admin/.hermes/profiles/backend/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/profiles/backend/skills
 ```
 
 ## Example Skill Flags
@@ -83,5 +85,5 @@ Do not blindly attach every skill if a narrower task only needs a subset.
 Fast selection index for this specialist is generated at:
 
 ```text
-C:\Users\Admin\.hermes\profiles\backend\skills\SKILL_DESCRIPTIONS.md
+C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\backend\skills\SKILL_DESCRIPTIONS.md
 ```

@@ -1,0 +1,1 @@
+User expects every direct request involving execution, coding, refactoring, fixing, configuration, test-file creation, or specialist/Kanban work to receive a detailed pro-max proposal and explicit confirmation before side effects. After approval, execute the approved scope without asking again; request new confirmation only for material scope expansion.

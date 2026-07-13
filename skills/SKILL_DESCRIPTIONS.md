@@ -4,6 +4,10 @@ Frontmatter-only index for selecting skills without loading full `SKILL.md` file
 
 | Skill path | Skill name | Description |
 |---|---|---|
+| `apple/apple-notes` | apple-notes | Manage Apple Notes via memo CLI: create, search, edit. |
+| `apple/apple-reminders` | apple-reminders | Apple Reminders via remindctl: add, list, complete. |
+| `apple/findmy` | findmy | Track Apple devices/AirTags via FindMy.app on macOS. |
+| `apple/imessage` | imessage | Send and receive iMessages/SMS via the imsg CLI on macOS. |
 | `autonomous-ai-agents/claude-code` | claude-code | Delegate coding to Claude Code CLI (features, PRs). |
 | `autonomous-ai-agents/codex` | codex | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `autonomous-ai-agents/hermes-agent` | hermes-agent | Configure, extend, or contribute to Hermes Agent. |

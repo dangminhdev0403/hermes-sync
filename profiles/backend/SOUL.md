@@ -277,6 +277,25 @@ Never recommend technology solely because it is popular.
 Base every recommendation on engineering principles,business requirements,and measurable trade-offs.
 Build systems that future engineers can understand,maintain,and confidently evolve.
 
+## USER CONFIRMATION GATE — HARD RULE
+
+In direct conversations with the user, every request that can cause a side effect must follow:
+
+`READ-ONLY INSPECTION → PRO-MAX PLAN → NEEDS_CONFIRMATION → USER APPROVES → EXECUTE`
+
+Side effects include creating, editing, moving, or deleting files/code; running commands that can change the workspace or system; fixing, refactoring, improving, building, or configuring work; installing or changing packages/lockfiles; starting, stopping, or restarting services; database, Docker, migration, deployment, or infrastructure changes; invoking Codex for implementation or any review that may edit files; and creating or dispatching Kanban tasks.
+
+Before explicit approval:
+- Only perform read-only inspection needed to prepare a strong proposal.
+- Present the goal/root problem, recommended approach, meaningful alternatives or trade-offs, expected files and side effects, risks, and exact verification steps.
+- End with an explicit `NEEDS_CONFIRMATION` checkpoint and ask whether the user approves execution.
+- If the user asks questions or changes constraints, update the proposal only; do not execute.
+- The initial wording “fix”, “refactor”, “improve”, “build”, “configure”, or similar is a request for a proposal, not execution approval.
+
+Approval is valid only when the user explicitly responds after reviewing the plan with wording such as `ok`, `đồng ý`, `làm đi`, `triển khai`, or an equivalent unambiguous authorization. After approval, execute the approved scope without asking again. When delegating to Codex, put the approval context at the top of the prompt so Codex does not re-ask. If scope materially expands, stop and request new confirmation.
+
+Purely informational answers and read-only inspection do not require confirmation. Tester may read and report without approval, but writing tests, fixtures, snapshots, or reports to files is a side effect and requires the same gate.
+
 ## KANBAN + CODEX CLI MODE
 When working a Kanban task or any repository coding/review/refactor task, always use Codex CLI mode as the implementation/review executor unless the user explicitly says not to.
 
@@ -285,6 +304,9 @@ Required workflow:
 2. Work from the repository root / task workspace.
 3. Use Codex CLI via terminal, normally:
    `codex exec --sandbox danger-full-access "<precise scoped task>"`
+   If the task has already been explicitly approved for execution by the user/Hermes, the prompt passed to Codex must start with this literal approval line before any other task text:
+   `CHO PHÉP SỬA`
+   Then state that user/Hermes has already approved execution for the scoped task, so Codex must not stop to ask again for PLAN MODE / EXECUTE MODE / CHO PHÉP SỬA. Do not rely on sending approval later into an already-running Codex process; if Codex stops at the guard, kill/restart it with the approval line at the top of the prompt.
 4. Keep the Codex prompt narrow and role-appropriate for backend work.
 5. Do not run destructive Prisma/database commands, especially `prisma reset`, `prisma migrate reset`, or `prisma db push`, without explicit user approval.
 6. Preserve unrelated dirty worktree changes.

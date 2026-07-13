@@ -1,0 +1,633 @@
+diff --git a/agent/codex_runtime.py b/agent/codex_runtime.py
+index 2077d2f..68e8271 100644
+--- a/agent/codex_runtime.py
++++ b/agent/codex_runtime.py
+@@ -25,6 +25,93 @@ from typing import Any, Dict, List
+ logger = logging.getLogger(__name__)
+ 
+ 
++_PLAN_ONLY_DIRECTIVE = """<confirmation_gate>
++CONFIRMATION_GATE: PLAN_ONLY
++This is a direct user-facing session and execution has not been approved after a plan.
++If the request is purely informational, answer it directly without tools.
++If the request could cause any side effect, Do not call tools, execute commands, edit files, invoke implementation agents, or change external/local state. Produce a concrete pro-max plan with goal, approach, expected files/side effects, risks, and verification. End with the exact standalone marker NEEDS_CONFIRMATION and ask the user to approve before execution.
++The initial words fix/refactor/improve/build/configure are not approval.
++</confirmation_gate>
++
++"""
++
++_APPROVED_SCOPE_DIRECTIVE = """<confirmation_gate>
++CONFIRMATION_GATE: APPROVED_SCOPE
++The user explicitly approved after reviewing the previous plan. Now execute the previously proposed scope without asking again. Stay within that scope, preserve unrelated work, verify real results, and stop for new confirmation if scope materially expands.
++</confirmation_gate>
++
++"""
++
++
++def _message_text(message: Dict[str, Any]) -> str:
++    content = message.get("content", "") if isinstance(message, dict) else ""
++    if isinstance(content, str):
++        return content
++    if isinstance(content, list):
++        parts: list[str] = []
++        for item in content:
++            if isinstance(item, dict) and isinstance(item.get("text"), str):
++                parts.append(item["text"])
++        return "\n".join(parts)
++    return ""
++
++
++def _confirmation_gate_state(
++    user_message: str, messages: List[Dict[str, Any]]
++) -> tuple[bool, bool, str]:
++    """Return (approved, delegated, previous_assistant) for this turn."""
++    raw = str(user_message or "")
++    normalized = raw.strip().lower()
++    delegated_approval = normalized.startswith("cho phép sửa")
++    explicit_approval = normalized in {
++        "ok", "okay", "đồng ý", "làm đi", "triển khai", "chấp nhận",
++        "ok làm đi", "ok triển khai", "đồng ý triển khai", "xác nhận",
++    } or normalized.startswith(("ok ", "đồng ý ", "triển khai ", "làm đi "))
++    previous_assistant = ""
++    for message in reversed(messages or []):
++        if isinstance(message, dict) and message.get("role") == "assistant":
++            previous_assistant = _message_text(message)
++            break
++    approved_after_plan = explicit_approval and "NEEDS_CONFIRMATION" in previous_assistant
++    return delegated_approval or approved_after_plan, delegated_approval, previous_assistant
++
++
++def _confirmation_gate_is_approved(
++    user_message: str, messages: List[Dict[str, Any]]
++) -> bool:
++    return _confirmation_gate_state(user_message, messages)[0]
++
++
++def _confirmation_gated_codex_input(
++    user_message: str, messages: List[Dict[str, Any]]
++) -> str:
++    """Add a hard planning/approval boundary to a Codex app-server turn."""
++    raw = str(user_message or "")
++    approved, delegated_approval, previous_assistant = _confirmation_gate_state(
++        raw, messages
++    )
++
++    if delegated_approval:
++        return _APPROVED_SCOPE_DIRECTIVE + raw
++
++    if approved:
++        original_request = ""
++        for message in messages or []:
++            if isinstance(message, dict) and message.get("role") == "user":
++                candidate = _message_text(message).strip()
++                if candidate and candidate != raw.strip():
++                    original_request = candidate
++                    break
++        replay = (
++            "<approved_context>\n"
++            f"ORIGINAL_REQUEST:\n{original_request}\n\n"
++            f"APPROVED_PLAN:\n{previous_assistant}\n"
++            "</approved_context>\n\n"
++        )
++        return _APPROVED_SCOPE_DIRECTIVE + replay + raw
++    return _PLAN_ONLY_DIRECTIVE + raw
++
++
+ def _codex_note_to_tool_progress(note: dict) -> tuple[str, str, dict] | None:
+     """Map a Codex app-server ``item/started`` notification to a Hermes
+     tool-progress event ``(tool_name, preview, args)``.
+@@ -372,8 +459,40 @@ def run_codex_app_server_turn(
+             except Exception:
+                 logger.debug("codex tool-progress callback raised", exc_info=True)
+ 
++        # Codex app-server normally inherits its model from ~/.codex/config.toml.
++        # Profiles may override it independently of their Hermes/default model.
++        codex_extra_args: list[str] = []
++        try:
++            import json
++            from hermes_cli.config import load_config
++
++            model_cfg = load_config().get("model", {}) or {}
++            if isinstance(model_cfg, dict):
++                codex_model = str(model_cfg.get("codex_model") or "").strip()
++                codex_effort = str(
++                    model_cfg.get("codex_reasoning_effort") or ""
++                ).strip().lower()
++                if codex_model:
++                    codex_extra_args.extend(
++                        ["-c", f"model={json.dumps(codex_model)}"]
++                    )
++                if codex_effort:
++                    codex_extra_args.extend(
++                        [
++                            "-c",
++                            f"model_reasoning_effort={json.dumps(codex_effort)}",
++                        ]
++                    )
++        except Exception:
++            logger.warning(
++                "codex app-server: profile model override lookup failed; "
++                "falling back to Codex config",
++                exc_info=True,
++            )
++
+         agent._codex_session = CodexAppServerSession(
+             cwd=cwd,
++            extra_args=codex_extra_args,
+             approval_callback=approval_callback,
+             request_routing=_ServerRequestRouting(
+                 auto_approve_exec=auto_approve_requests,
+@@ -386,8 +505,35 @@ def run_codex_app_server_turn(
+     # standard run_conversation() flow (line ~11823) before the early
+     # return reaches us. Do NOT append again — that would duplicate.
+ 
++    codex_user_input = user_message
++    confirmation_gate_enabled = False
++    confirmation_gate_approved = False
++    try:
++        from hermes_cli.config import load_config
++
++        agent_cfg = load_config().get("agent", {}) or {}
++        if isinstance(agent_cfg, dict) and agent_cfg.get("confirmation_gate") is True:
++            confirmation_gate_enabled = True
++            confirmation_gate_approved = _confirmation_gate_is_approved(
++                user_message, messages
++            )
++            codex_user_input = _confirmation_gated_codex_input(user_message, messages)
++    except Exception:
++        logger.warning(
++            "codex app-server: confirmation-gate lookup failed; "
++            "keeping the original user input",
++            exc_info=True,
++        )
++
++    routing = getattr(agent._codex_session, "_routing", None)
++    old_exec_approval = getattr(routing, "auto_approve_exec", False)
++    old_patch_approval = getattr(routing, "auto_approve_apply_patch", False)
++    if confirmation_gate_enabled and confirmation_gate_approved and routing is not None:
++        routing.auto_approve_exec = True
++        routing.auto_approve_apply_patch = True
++
+     try:
+-        turn = agent._codex_session.run_turn(user_input=user_message)
++        turn = agent._codex_session.run_turn(user_input=codex_user_input)
+     except Exception as exc:
+         logger.exception("codex app-server turn failed")
+         # Crash → unconditionally drop the session so the next turn
+@@ -408,6 +554,10 @@ def run_codex_app_server_turn(
+             "partial": True,
+             "error": str(exc),
+         }
++    finally:
++        if routing is not None:
++            routing.auto_approve_exec = old_exec_approval
++            routing.auto_approve_apply_patch = old_patch_approval
+ 
+     # If the turn signalled the underlying client is wedged (deadline
+     # blown, post-tool watchdog tripped, OAuth refresh died, subprocess
+diff --git a/agent/transports/codex_app_server.py b/agent/transports/codex_app_server.py
+index 273e446..e6b8387 100644
+--- a/agent/transports/codex_app_server.py
++++ b/agent/transports/codex_app_server.py
+@@ -19,10 +19,12 @@ from __future__ import annotations
+ import json
+ import os
+ import queue
++import shutil
+ import subprocess
+ import threading
+ import time
+ from dataclasses import dataclass, field
++
+ from typing import Any, Optional
+ 
+ from tools.environments.local import hermes_subprocess_env
+@@ -32,6 +34,28 @@ from tools.environments.local import hermes_subprocess_env
+ MIN_CODEX_VERSION = (0, 125, 0)
+ 
+ 
++def resolve_codex_binary(codex_bin: str = "codex", *, env: Optional[dict[str, str]] = None) -> str:
++    """Return an executable Codex CLI path for the current spawn environment.
++
++    On Windows, subprocess with a custom env does not reliably resolve npm
++    command shims from the bare name. Resolve against the same PATH that will
++    be used for the child so nvm/npm installs such as codex.cmd work from
++    gateway, cron, and specialist worker contexts.
++    """
++    if os.path.isabs(codex_bin) or os.sep in codex_bin or (os.altsep and os.altsep in codex_bin):
++        return codex_bin
++    search_path = (env or os.environ).get("PATH")
++    found = shutil.which(codex_bin, path=search_path)
++    if found:
++        return found
++    if os.name == "nt" and not codex_bin.lower().endswith((".cmd", ".bat", ".exe")):
++        for suffix in (".cmd", ".bat", ".exe"):
++            found = shutil.which(codex_bin + suffix, path=search_path)
++            if found:
++                return found
++    return codex_bin
++
++
+ @dataclass
+ class CodexAppServerError(RuntimeError):
+     """Raised on JSON-RPC errors from the app-server."""
+@@ -92,6 +116,8 @@ class CodexAppServerClient:
+             spawn_env.update(env)
+         if codex_home:
+             spawn_env["CODEX_HOME"] = codex_home
++        codex_bin = resolve_codex_binary(codex_bin, env=spawn_env)
++        self._codex_bin = codex_bin
+ 
+         app_server_args = list(extra_args or [])
+         # Kanban workers must be able to write their handoff/status back to
+@@ -112,12 +138,18 @@ class CodexAppServerClient:
+                     ),
+                 )
+             )
++            # Codex parses `-c sandbox_workspace_write.writable_roots=[...]`
++            # before TOML unescaping. Native Windows paths with backslashes can
++            # be misclassified as a single string value instead of a sequence
++            # ("expected a sequence"), so pass Windows paths with forward
++            # slashes. Win32 APIs and Codex both accept this form.
++            kanban_root_arg = os.path.normpath(kanban_root).replace("\\", "/")
+             app_server_args.extend(
+                 [
+                     "-c",
+                     'sandbox_mode="workspace-write"',
+                     "-c",
+-                    f'sandbox_workspace_write.writable_roots=["{kanban_root}"]',
++                    f'sandbox_workspace_write.writable_roots=["{kanban_root_arg}"]',
+                     "-c",
+                     "sandbox_workspace_write.network_access=false",
+                 ]
+@@ -127,6 +159,9 @@ class CodexAppServerClient:
+         # Codex emits tracing to stderr; default WARN keeps it quiet for users.
+         spawn_env.setdefault("RUST_LOG", "warn")
+ 
++        popen_kwargs: dict[str, Any] = {}
++        if os.name == "nt":
++            popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+         self._proc = subprocess.Popen(
+             cmd,
+             stdin=subprocess.PIPE,
+@@ -134,6 +169,7 @@ class CodexAppServerClient:
+             stderr=subprocess.PIPE,
+             bufsize=0,
+             env=spawn_env,
++            **popen_kwargs,
+         )
+         self._next_id = 1
+         self._pending: dict[int, _Pending] = {}
+@@ -385,19 +421,28 @@ def check_codex_binary(
+     """Verify codex CLI is installed and meets minimum version.
+ 
+     Returns (ok, message). Used by setup wizard and runtime startup."""
++    spawn_env = hermes_subprocess_env(inherit_credentials=True)
++    resolved_bin = resolve_codex_binary(codex_bin, env=spawn_env)
+     try:
++        run_kwargs: dict[str, Any] = {}
++        if os.name == "nt":
++            run_kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+         proc = subprocess.run(
+-            [codex_bin, "--version"],
++            [resolved_bin, "--version"],
+             capture_output=True,
+             text=True,
+             timeout=10,
+             stdin=subprocess.DEVNULL,
++            env=spawn_env,
++            **run_kwargs,
+         )
+     except FileNotFoundError:
+         return False, (
+             f"codex CLI not found at {codex_bin!r}. Install with: "
+             f"npm i -g @openai/codex"
+         )
++    except OSError as exc:
++        return False, f"codex CLI at {resolved_bin!r} could not be executed: {exc}"
+     except subprocess.TimeoutExpired:
+         return False, "codex --version timed out"
+     if proc.returncode != 0:
+diff --git a/agent/transports/codex_app_server_session.py b/agent/transports/codex_app_server_session.py
+index 78af728..a258383 100644
+--- a/agent/transports/codex_app_server_session.py
++++ b/agent/transports/codex_app_server_session.py
+@@ -204,6 +204,7 @@ class CodexAppServerSession:
+         cwd: Optional[str] = None,
+         codex_bin: str = "codex",
+         codex_home: Optional[str] = None,
++        extra_args: Optional[list[str]] = None,
+         permission_profile: Optional[str] = None,
+         approval_callback: Optional[Callable[..., str]] = None,
+         on_event: Optional[Callable[[dict], None]] = None,
+@@ -213,6 +214,7 @@ class CodexAppServerSession:
+         self._cwd = cwd or os.getcwd()
+         self._codex_bin = codex_bin
+         self._codex_home = codex_home
++        self._extra_args = list(extra_args or [])
+         self._permission_profile = (
+             permission_profile or _HERMES_TO_CODEX_PERMISSION_PROFILE.get(
+                 os.environ.get("HERMES_TERMINAL_SECURITY_MODE", "auto"),
+@@ -245,7 +247,9 @@ class CodexAppServerSession:
+             return self._thread_id
+         if self._client is None:
+             self._client = self._client_factory(
+-                codex_bin=self._codex_bin, codex_home=self._codex_home
++                codex_bin=self._codex_bin,
++                codex_home=self._codex_home,
++                extra_args=self._extra_args,
+             )
+         self._client.initialize(
+             client_name="hermes",
+diff --git a/hermes_cli/runtime_provider.py b/hermes_cli/runtime_provider.py
+index ddc7cce..a6efdcb 100644
+--- a/hermes_cli/runtime_provider.py
++++ b/hermes_cli/runtime_provider.py
+@@ -374,17 +374,22 @@ def _maybe_apply_codex_app_server_runtime(
+     `model.openai_runtime: codex_app_server` in config.yaml.
+ 
+     Default behavior is preserved: when the key is unset, "auto", or empty,
+-    this function is a no-op. Only providers in {"openai", "openai-codex"}
+-    are eligible — other providers (anthropic, openrouter, etc.) cannot be
+-    rerouted through codex.
++    this function is a no-op. Only OpenAI/Codex providers are eligible — other
++    providers (anthropic, openrouter, etc.) cannot be rerouted through codex.
+ 
+     Returns the (possibly-rewritten) api_mode."""
+     if not model_cfg:
+         return api_mode
+-    if provider not in {"openai", "openai-codex"}:
+-        return api_mode
+     runtime = str(model_cfg.get("openai_runtime") or "").strip().lower()
+-    if runtime == "codex_app_server":
++    if runtime != "codex_app_server":
++        return api_mode
++    if provider in {"openai", "openai-api", "openai-codex"}:
++        return "codex_app_server"
++    # Named OpenAI-compatible routers resolve to provider="custom" before
++    # this gate. The explicit runtime opt-in is sufficient because Codex owns
++    # the provider endpoint/auth in its own config; do not reroute custom
++    # endpoints unless the user asked for Codex app-server.
++    if provider == "custom" and str(model_cfg.get("provider") or "").strip():
+         return "codex_app_server"
+     return api_mode
+ 
+@@ -1169,13 +1174,22 @@ def _resolve_openrouter_runtime(
+     if effective_provider == "custom" and not api_key and not _is_openrouter_url:
+         api_key = "no-key-required"
+ 
+-    return {
+-        "provider": effective_provider,
+-        "api_mode": _resolve_plain_custom_api_mode(model_cfg, base_url)
++    resolved_api_mode = (
++        _resolve_plain_custom_api_mode(model_cfg, base_url)
+         if effective_provider == "custom"
+         else _parse_api_mode(model_cfg.get("api_mode"))
+         or _detect_api_mode_for_url(base_url)
+-        or "chat_completions",
++        or "chat_completions"
++    )
++    resolved_api_mode = _maybe_apply_codex_app_server_runtime(
++        provider=effective_provider,
++        api_mode=resolved_api_mode,
++        model_cfg=model_cfg,
++    )
++
++    return {
++        "provider": effective_provider,
++        "api_mode": resolved_api_mode,
+         "base_url": base_url,
+         "api_key": api_key,
+         "source": source,
+diff --git a/tests/agent/transports/test_codex_app_server_runtime.py b/tests/agent/transports/test_codex_app_server_runtime.py
+index 5c1c9bd..92fa34f 100644
+--- a/tests/agent/transports/test_codex_app_server_runtime.py
++++ b/tests/agent/transports/test_codex_app_server_runtime.py
+@@ -7,6 +7,8 @@ covered by a separate live test gated on `codex --version`.
+ 
+ from __future__ import annotations
+ 
++import sys
++
+ import pytest
+ 
+ from hermes_cli.runtime_provider import (
+@@ -70,6 +72,20 @@ class TestMaybeApplyCodexAppServerRuntime:
+         )
+         assert got == "codex_app_server"
+ 
++    def test_explicit_custom_openai_compatible_endpoint_can_use_codex(self) -> None:
++        """Named OpenAI-compatible routers normalize to provider=custom.
++        Explicit codex_app_server opt-in must still reach the Codex subprocess.
++        """
++        got = _maybe_apply_codex_app_server_runtime(
++            provider="custom",
++            api_mode="chat_completions",
++            model_cfg={
++                "provider": "omniroute",
++                "openai_runtime": "codex_app_server",
++            },
++        )
++        assert got == "codex_app_server"
++
+     def test_case_insensitive(self) -> None:
+         got = _maybe_apply_codex_app_server_runtime(
+             provider="openai",
+@@ -103,6 +119,28 @@ class TestMaybeApplyCodexAppServerRuntime:
+         )
+ 
+ 
++class TestPlainCustomRuntimeRouting:
++    def test_plain_custom_resolver_applies_codex_runtime_opt_in(self, monkeypatch) -> None:
++        """The top-level custom resolver must not discard the Codex runtime
++        override after the eligibility helper accepts it.
++        """
++        import hermes_cli.runtime_provider as rp
++
++        monkeypatch.setattr(
++            rp,
++            "_get_model_config",
++            lambda: {
++                "provider": "custom",
++                "base_url": "http://127.0.0.1:20128/v1",
++                "openai_runtime": "codex_app_server",
++            },
++        )
++        monkeypatch.setattr(rp, "_try_resolve_from_custom_pool", lambda *a, **k: None)
++        runtime = rp._resolve_openrouter_runtime(requested_provider="custom")
++        assert runtime["provider"] == "custom"
++        assert runtime["api_mode"] == "codex_app_server"
++
++
+ class TestCodexAppServerModule:
+     """Module-surface tests for the JSON-RPC speaker. Don't require codex CLI."""
+ 
+@@ -287,7 +325,8 @@ class TestSpawnEnvIsolation:
+         client._closed = True
+ 
+         cmd = captured["cmd"]
+-        assert cmd[:2] == ["codex", "app-server"]
++        assert cmd[1] == "app-server"
++        assert cmd[0].lower().endswith(("codex", "codex.cmd", "codex.bat", "codex.exe"))
+         assert 'sandbox_mode="workspace-write"' in cmd
+         assert (
+             'sandbox_workspace_write.writable_roots=["/users/alice/.hermes/kanban/boards/smoke"]'
+@@ -296,6 +335,50 @@ class TestSpawnEnvIsolation:
+         assert "sandbox_workspace_write.network_access=false" in cmd
+         assert all("danger" not in part for part in cmd)
+ 
++    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific path normalization")
++    def test_kanban_worker_uses_forward_slashes_for_windows_writable_root(self, monkeypatch):
++        """Codex 0.144 rejects backslash-heavy Windows list overrides as a
++        string, not a sequence. Hermes must pass Windows Kanban roots with
++        forward slashes.
++        """
++        import subprocess
++        from agent.transports import codex_app_server as cas
++
++        captured = {}
++
++        class FakePopen:
++            def __init__(self, cmd, *args, **kwargs):
++                captured["cmd"] = list(cmd)
++                self.stdin = None
++                self.stdout = None
++                self.stderr = None
++                self.pid = 1
++                self.returncode = None
++
++            def poll(self):
++                return None
++
++            def terminate(self):
++                pass
++
++            def wait(self, timeout=None):
++                return 0
++
++            def kill(self):
++                pass
++
++        monkeypatch.setattr(subprocess, "Popen", FakePopen)
++        monkeypatch.setenv("HERMES_KANBAN_TASK", "t_smoke")
++        monkeypatch.setenv(
++            "HERMES_KANBAN_DB",
++            r"C:\Users\alice\AppData\Local\hermes\kanban\boards\smoke\kanban.db",
++        )
++
++        client = cas.CodexAppServerClient(codex_bin="codex")
++        client._closed = True
++
++        assert 'sandbox_workspace_write.writable_roots=["C:/Users/alice/AppData/Local/hermes/kanban/boards/smoke"]' in captured["cmd"]
++
+ 
+ class TestSpawnEnvSecretStripping:
+     """codex app-server routes its spawn env through hermes_subprocess_env(
+diff --git a/tests/run_agent/test_codex_app_server_integration.py b/tests/run_agent/test_codex_app_server_integration.py
+index df16807..ab7d59b 100644
+--- a/tests/run_agent/test_codex_app_server_integration.py
++++ b/tests/run_agent/test_codex_app_server_integration.py
+@@ -71,6 +71,51 @@ class TestApiModeAccepted:
+         assert agent.api_mode == "codex_app_server"
+ 
+ 
++class TestCodexConfirmationGate:
++    def test_initial_side_effect_request_is_forced_into_plan_mode(self):
++        from agent.codex_runtime import _confirmation_gated_codex_input
++
++        got = _confirmation_gated_codex_input(
++            "Refactor the landing page",
++            [{"role": "user", "content": "Refactor the landing page"}],
++        )
++        assert "CONFIRMATION_GATE: PLAN_ONLY" in got
++        assert "NEEDS_CONFIRMATION" in got
++        assert "Do not call tools" in got
++
++    def test_ok_after_confirmation_marker_authorizes_approved_scope(self):
++        from agent.codex_runtime import _confirmation_gated_codex_input
++
++        got = _confirmation_gated_codex_input(
++            "ok triển khai",
++            [
++                {"role": "user", "content": "Refactor the landing page"},
++                {"role": "assistant", "content": "Plan...\nNEEDS_CONFIRMATION"},
++                {"role": "user", "content": "ok triển khai"},
++            ],
++        )
++        assert "CONFIRMATION_GATE: APPROVED_SCOPE" in got
++        assert "execute the previously proposed scope" in got
++        assert "Refactor the landing page" in got
++        assert "Plan..." in got
++        from agent.codex_runtime import _confirmation_gate_is_approved
++        assert _confirmation_gate_is_approved("ok triển khai", [
++            {"role": "assistant", "content": "Plan...\nNEEDS_CONFIRMATION"},
++            {"role": "user", "content": "ok triển khai"},
++        ]) is True
++
++    def test_delegated_literal_approval_bypasses_plan_only_gate(self):
++        from agent.codex_runtime import _confirmation_gated_codex_input
++
++        prompt = "CHO PHÉP SỬA\nUser/Hermes approved this scoped Kanban task."
++        got = _confirmation_gated_codex_input(
++            prompt,
++            [{"role": "user", "content": prompt}],
++        )
++        assert "CONFIRMATION_GATE: APPROVED_SCOPE" in got
++        assert "PLAN_ONLY" not in got
++
++
+ class TestRunConversationCodexPath:
+     def test_run_conversation_returns_codex_shape(self, fake_session):
+         agent = _make_codex_agent()
+@@ -367,6 +412,51 @@ class TestRunConversationCodexPath:
+ 
+         assert captured["cwd"] == str(tmp_path)
+ 
++    def test_profile_config_routes_explicit_codex_model_and_reasoning(self, monkeypatch):
++        """A specialist may keep its Hermes/default model while selecting a
++        different model for the Codex app-server subprocess. The runtime must
++        translate the profile-scoped config into Codex CLI overrides.
++        """
++        from agent.transports.codex_app_server_session import (
++            CodexAppServerSession, TurnResult,
++        )
++
++        captured: dict = {}
++
++        def fake_init(self, **kwargs):
++            captured.update(kwargs)
++            self._thread_id = "thread-stub-1"
++
++        def fake_run_turn(self, user_input: str, **kwargs):
++            return TurnResult(
++                final_text="ok",
++                projected_messages=[{"role": "assistant", "content": "ok"}],
++                turn_id="turn-stub-1",
++                thread_id="thread-stub-1",
++            )
++
++        monkeypatch.setattr(CodexAppServerSession, "__init__", fake_init)
++        monkeypatch.setattr(CodexAppServerSession, "run_turn", fake_run_turn)
++
++        with patch(
++            "hermes_cli.config.load_config",
++            return_value={
++                "model": {
++                    "default": "cx/gpt-5.6-luna",
++                    "codex_model": "cx/gpt-5.3-codex-spark",
++                    "codex_reasoning_effort": "medium",
++                }
++            },
++        ):
++            agent = _make_codex_agent(model="cx/gpt-5.6-luna")
++            with patch.object(agent, "_spawn_background_review", return_value=None):
++                agent.run_conversation("update compose config")
++
++        assert captured["extra_args"] == [
++            "-c", 'model="cx/gpt-5.3-codex-spark"',
++            "-c", 'model_reasoning_effort="medium"',
++        ]
++
+     def _capture_routing_agent(self, monkeypatch):
+         """Build a codex agent with a CodexAppServerSession stub that captures
+         the request_routing passed at construction time, so we can assert how

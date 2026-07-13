@@ -7,8 +7,14 @@ This repository stores only durable Hermes customizations that are safe and usef
 - Custom and patched skills under `skills/`.
 - Specialist profile skill copies under `profiles/<profile>/skills/` when they are intentionally synchronized for backend/frontend/dev-ops/tester workers.
 - `SOUL.md`, `profile.yaml`, and durable non-secret memory notes.
-- Helper scripts such as `scripts/sonarqube-review.sh`.
-- This documentation and `.gitignore` policy.
+- Redacted `profiles/*/config.example.yaml` templates containing only portable,
+  non-secret specialist model/runtime policy.
+- Version-checked Hermes Agent patches under `patches/hermes-agent/` when local
+  runtime support is required for those templates.
+- Helper scripts such as `scripts/sonarqube-review.sh` and
+  `scripts/restore-specialist-config.py`.
+- This documentation and `.gitignore` policy. See `docs/SPECIALIST_RESTORE.md`
+  for the specialist restore and behavioral verification procedure.
 
 ## Ignored / removed from Git
 

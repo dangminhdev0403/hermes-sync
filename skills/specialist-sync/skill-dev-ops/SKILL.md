@@ -29,6 +29,7 @@ This manifest keeps the `dev-ops` specialist profile synchronized with the skill
 
 | Skill path | Skill name | Description |
 |---|---|---|
+| `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `dev-ops/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
 | `dev-ops/autonomous-ai-agents/codex` | codex | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `dev-ops/docker-expert` | docker-expert | You are an advanced Docker containerization expert with comprehensive, practical knowledge of container optimization, security hardening, multi-stage builds, orchestration patterns, and production deployment strategies based on current industry best practices. |
@@ -40,6 +41,7 @@ This manifest keeps the `dev-ops` specialist profile synchronized with the skill
 
 ## Operating Policy
 
+- The confirmation gate applies to direct user chats as well as Kanban: inspect read-only, present a pro-max plan, and wait for explicit approval before any side effect.
 - Own Docker, local development services, infrastructure readiness, deployment/runtime configuration, and reproducibility.
 - Verify real service readiness with commands and health checks; never report infra success without tool output.
 - For local databases, provide connection details and verified versions.
@@ -58,13 +60,13 @@ This manifest keeps the `dev-ops` specialist profile synchronized with the skill
 The current synchronization source is the default profile skill tree:
 
 ```text
-C:/Users/Admin/AppData/Local/hermes/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/skills
 ```
 
 The synchronized specialist profile target is:
 
 ```text
-C:/Users/Admin/.hermes/profiles/dev-ops/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/profiles/dev-ops/skills
 ```
 
 ## Example Skill Flags
@@ -81,5 +83,5 @@ Do not blindly attach every skill if a narrower task only needs a subset.
 Fast selection index for this specialist is generated at:
 
 ```text
-C:\Users\Admin\.hermes\profiles\dev-ops\skills\SKILL_DESCRIPTIONS.md
+C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\dev-ops\skills\SKILL_DESCRIPTIONS.md
 ```

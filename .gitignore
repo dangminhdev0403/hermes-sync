@@ -20,6 +20,9 @@ audio_cache/
 # Node/build artifacts from tools or skills
 node_modules/
 **/node_modules/
+__pycache__/
+**/__pycache__/
+*.pyc
 .next/
 **/.next/
 dist/

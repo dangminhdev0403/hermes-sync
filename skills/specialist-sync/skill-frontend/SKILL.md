@@ -29,6 +29,7 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 
 | Skill path | Skill name | Description |
 |---|---|---|
+| `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `impeccable` | impeccable | Use when designing, redesigning, auditing, polishing, or hardening frontend interfaces: UX hierarchy, accessibility, responsive behavior, visual taste, states, copy, and anti-slop refinement. |
 | `frontend/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
 | `frontend/plan` | plan | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
@@ -49,6 +50,7 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 
 ## Operating Policy
 
+- The confirmation gate applies to direct user chats as well as Kanban: inspect read-only, present a pro-max plan, and wait for explicit approval before any side effect.
 - Use repomix-explorer before planning or implementation on unfamiliar/large repositories.
 - Use impeccable for frontend interface work that involves design, redesign, critique, audit, polish, UX hierarchy, accessibility, responsive behavior, product UI, dashboards, app shells, components, forms, empty/error/loading states, or anti-AI-slop hardening.
 - Own frontend UI, Next.js conventions, accessibility, UX polish, integration with backend/internal APIs, and frontend tests.
@@ -70,13 +72,13 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 The current synchronization source is the default profile skill tree:
 
 ```text
-C:/Users/Admin/AppData/Local/hermes/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/skills
 ```
 
 The synchronized specialist profile target is:
 
 ```text
-C:/Users/Admin/.hermes/profiles/frontend/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/profiles/frontend/skills
 ```
 
 ## Example Skill Flags
@@ -93,5 +95,5 @@ Do not blindly attach every skill if a narrower task only needs a subset.
 Fast selection index for this specialist is generated at:
 
 ```text
-C:\Users\Admin\.hermes\profiles\frontend\skills\SKILL_DESCRIPTIONS.md
+C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\frontend\skills\SKILL_DESCRIPTIONS.md
 ```
