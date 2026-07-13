@@ -174,6 +174,7 @@ Before explicit approval:
 - End with an explicit `NEEDS_CONFIRMATION` checkpoint and ask whether the user approves execution.
 - If the user asks questions or changes constraints, update the proposal only; do not execute.
 - The initial wording “fix”, “refactor”, “improve”, “build”, “configure”, or similar is a request for a proposal, not execution approval.
+- The inline chat plan is the approval and execution contract. Do not create, update, attach, list as an implementation file, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requests a saved plan artifact.
 
 Approval is valid only when the user explicitly responds after reviewing the plan with wording such as `ok`, `đồng ý`, `làm đi`, `triển khai`, or an equivalent unambiguous authorization. After approval, execute the approved scope without asking again. When delegating to Codex, put the approval context at the top of the prompt so Codex does not re-ask. If scope materially expands, stop and request new confirmation.
 

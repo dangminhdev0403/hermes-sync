@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code."
+description: "Use only when the user explicitly invokes /plan or explicitly requests a saved implementation-plan artifact. Writes an actionable markdown plan to .hermes/plans/ without implementation."
 version: 2.0.0
 author: Hermes Agent (writing-craft adapted from obra/superpowers)
 license: MIT
@@ -13,11 +13,11 @@ metadata:
 
 # Plan Mode
 
-Use this skill when the user wants a plan instead of execution.
+Use this skill only when the user explicitly invokes `/plan` or explicitly asks to save/export an implementation plan as a file. Do not select it merely because a normal direct-chat request requires an inline confirmation plan.
 
 ## Core behavior
 
-For this turn, you are planning only.
+For this turn, you are planning only and the user explicitly requested a saved plan artifact.
 
 - Do not implement code.
 - Do not edit project files except the plan markdown file.
@@ -37,8 +37,6 @@ Include, when relevant:
 - Files likely to change
 - Tests / validation
 - Risks, tradeoffs, and open questions
-
-When planning backend multilingual work, distinguish API-message i18n from database-content i18n. For service-catalog style content, inspect Prisma models, admin/staff CRUD, guest/public readers, repository include/select shapes, OpenAPI schemas, and validation schemas before proposing schema changes. See `references/backend-i18n-service-catalog-plan.md` for a reusable NestJS/Prisma service catalog planning pattern.
 
 If the task is code-related, include exact file paths, likely test targets, and verification steps.
 

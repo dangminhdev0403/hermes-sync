@@ -85,3 +85,6 @@ Fast selection index for this specialist is generated at:
 ```text
 C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\dev-ops\skills\SKILL_DESCRIPTIONS.md
 ```
+## Inline Plan Artifact Policy
+
+The approved inline chat plan is the execution contract. Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requested a saved plan artifact. A clear approval such as `phê duyệt triển khai` must authorize the existing plan immediately without a second confirmation loop.

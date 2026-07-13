@@ -1,8 +1,8 @@
 # Skill Selection Index
 
-Generated from skill names and frontmatter descriptions only.
+Generated from skill frontmatter. Select by name and description; load full SKILL.md only after selection.
 
-| Skill path | Skill name | Description |
+| Path | Name | Description |
 |---|---|---|
 | `autonomous-ai-agents/codex` | `codex` | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `software-development/backend-i18n` | `backend-i18n` | Design and implement backend multilingual support for API messages and database-backed content, especially NestJS/Prisma service catalog domains. |
@@ -11,7 +11,7 @@ Generated from skill names and frontmatter descriptions only.
 | `software-development/hermes-agent-skill-authoring` | `hermes-agent-skill-authoring` | Author in-repo SKILL.md: frontmatter, validator, structure, and writing-quality principles. |
 | `software-development/local-code-quality-gates` | `local-code-quality-gates` | Use when setting up or running local static-analysis quality gates for code review, especially SonarQube-in-Docker review gates for frontend/backend cleanliness checks. |
 | `software-development/nestjs-backend-integrations` | `nestjs-backend-integrations` | Implement external service integrations in NestJS/Prisma backends as asynchronous side effects without breaking core business writes. |
-| `software-development/plan` | `plan` | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
+| `software-development/plan` | `plan` | Use only when the user explicitly invokes /plan or explicitly requests a saved implementation-plan artifact. Writes an actionable markdown plan to .hermes/plans/ without implementation. |
 | `software-development/rbac-access-control-refactoring` | `rbac-access-control-refactoring` | Refactor role/permission systems from route-level RBAC toward business capability permissions with safer backend guards and simpler admin UIs. |
 | `software-development/repomix-explorer` | `repomix-explorer` | \| |
 | `software-development/requesting-code-review` | `requesting-code-review` | Pre-commit review: security scan, quality gates, auto-fix. |

@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code."
+description: "Use only when the user explicitly invokes /plan or explicitly requests a saved implementation-plan artifact. Writes an actionable markdown plan to .hermes/plans/ without implementation."
 version: 2.0.0
 author: Hermes Agent (writing-craft adapted from obra/superpowers)
 license: MIT
@@ -13,11 +13,11 @@ metadata:
 
 # Plan Mode
 
-Use this skill when the user wants a plan instead of execution.
+Use this skill only when the user explicitly invokes `/plan` or explicitly asks to save/export an implementation plan as a file. Do not select it merely because a normal direct-chat request requires an inline confirmation plan.
 
 ## Core behavior
 
-For this turn, you are planning only.
+For this turn, you are planning only and the user explicitly requested a saved plan artifact.
 
 - Do not implement code.
 - Do not edit project files except the plan markdown file.

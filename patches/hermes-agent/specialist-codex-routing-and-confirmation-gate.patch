@@ -1,8 +1,17 @@
 diff --git a/agent/codex_runtime.py b/agent/codex_runtime.py
-index 2077d2f..68e8271 100644
+index 2077d2f..23654ff 100644
 --- a/agent/codex_runtime.py
 +++ b/agent/codex_runtime.py
-@@ -25,6 +25,93 @@ from typing import Any, Dict, List
+@@ -18,13 +18,128 @@ from __future__ import annotations
+ 
+ import logging
+ import os
++import re
+ import time
++import unicodedata
+ from types import SimpleNamespace
+ from typing import Any, Dict, List
+ 
  logger = logging.getLogger(__name__)
  
  
@@ -11,6 +20,7 @@ index 2077d2f..68e8271 100644
 +This is a direct user-facing session and execution has not been approved after a plan.
 +If the request is purely informational, answer it directly without tools.
 +If the request could cause any side effect, Do not call tools, execute commands, edit files, invoke implementation agents, or change external/local state. Produce a concrete pro-max plan with goal, approach, expected files/side effects, risks, and verification. End with the exact standalone marker NEEDS_CONFIRMATION and ask the user to approve before execution.
++The inline chat plan is the approval contract. Do not create, update, attach, or resend PLAN.md, PLANS.md, or files under .hermes/plans unless the user explicitly requested a saved plan artifact.
 +The initial words fix/refactor/improve/build/configure are not approval.
 +</confirmation_gate>
 +
@@ -19,6 +29,7 @@ index 2077d2f..68e8271 100644
 +_APPROVED_SCOPE_DIRECTIVE = """<confirmation_gate>
 +CONFIRMATION_GATE: APPROVED_SCOPE
 +The user explicitly approved after reviewing the previous plan. Now execute the previously proposed scope without asking again. Stay within that scope, preserve unrelated work, verify real results, and stop for new confirmation if scope materially expands.
++The approved inline chat plan is the execution contract. Do not create, update, attach, or resend PLAN.md, PLANS.md, or files under .hermes/plans unless the user explicitly requested a saved plan artifact.
 +</confirmation_gate>
 +
 +"""
@@ -42,18 +53,42 @@ index 2077d2f..68e8271 100644
 +) -> tuple[bool, bool, str]:
 +    """Return (approved, delegated, previous_assistant) for this turn."""
 +    raw = str(user_message or "")
-+    normalized = raw.strip().lower()
-+    delegated_approval = normalized.startswith("cho phép sửa")
-+    explicit_approval = normalized in {
-+        "ok", "okay", "đồng ý", "làm đi", "triển khai", "chấp nhận",
-+        "ok làm đi", "ok triển khai", "đồng ý triển khai", "xác nhận",
-+    } or normalized.startswith(("ok ", "đồng ý ", "triển khai ", "làm đi "))
++    normalized = re.sub(r"\s+", " ", raw.strip().lower())
++    folded = "".join(
++        char
++        for char in unicodedata.normalize("NFD", normalized.replace("đ", "d"))
++        if unicodedata.category(char) != "Mn"
++    )
++    delegated_approval = folded.startswith("cho phep sua")
++    denial_prefixes = (
++        "khong ", "chua ", "dung ", "khong duoc ", "tu choi ",
++    )
++    denied = folded in {"khong", "chua", "dung"} or folded.startswith(
++        denial_prefixes
++    )
++    approval_phrases = {
++        "ok", "okay", "dong y", "lam di", "trien khai", "chap nhan",
++        "ok lam di", "ok trien khai", "dong y trien khai", "xac nhan",
++        "phe duyet", "phe duyet trien khai", "phe duyet thuc thi",
++        "xac nhan trien khai", "cho phep trien khai", "cho phep thuc thi",
++        "tien hanh", "tien hanh di", "cu lam di", "thuc hien di",
++        "trien khai di",
++    }
++    approval_prefixes = (
++        "ok ", "dong y ", "trien khai ", "lam di ", "phe duyet ",
++        "xac nhan ", "cho phep ", "tien hanh ", "cu lam ", "thuc hien ",
++    )
++    explicit_approval = not denied and (
++        folded in approval_phrases or folded.startswith(approval_prefixes)
++    )
 +    previous_assistant = ""
 +    for message in reversed(messages or []):
 +        if isinstance(message, dict) and message.get("role") == "assistant":
-+            previous_assistant = _message_text(message)
-+            break
-+    approved_after_plan = explicit_approval and "NEEDS_CONFIRMATION" in previous_assistant
++            candidate = _message_text(message)
++            if "NEEDS_CONFIRMATION" in candidate:
++                previous_assistant = candidate
++                break
++    approved_after_plan = explicit_approval and bool(previous_assistant)
 +    return delegated_approval or approved_after_plan, delegated_approval, previous_assistant
 +
 +
@@ -96,7 +131,7 @@ index 2077d2f..68e8271 100644
  def _codex_note_to_tool_progress(note: dict) -> tuple[str, str, dict] | None:
      """Map a Codex app-server ``item/started`` notification to a Hermes
      tool-progress event ``(tool_name, preview, args)``.
-@@ -372,8 +459,40 @@ def run_codex_app_server_turn(
+@@ -372,8 +487,40 @@ def run_codex_app_server_turn(
              except Exception:
                  logger.debug("codex tool-progress callback raised", exc_info=True)
  
@@ -137,7 +172,7 @@ index 2077d2f..68e8271 100644
              approval_callback=approval_callback,
              request_routing=_ServerRequestRouting(
                  auto_approve_exec=auto_approve_requests,
-@@ -386,8 +505,35 @@ def run_codex_app_server_turn(
+@@ -386,8 +533,35 @@ def run_codex_app_server_turn(
      # standard run_conversation() flow (line ~11823) before the early
      # return reaches us. Do NOT append again — that would duplicate.
  
@@ -174,7 +209,7 @@ index 2077d2f..68e8271 100644
      except Exception as exc:
          logger.exception("codex app-server turn failed")
          # Crash → unconditionally drop the session so the next turn
-@@ -408,6 +554,10 @@ def run_codex_app_server_turn(
+@@ -408,6 +582,10 @@ def run_codex_app_server_turn(
              "partial": True,
              "error": str(exc),
          }
@@ -524,10 +559,10 @@ index 5c1c9bd..92fa34f 100644
  class TestSpawnEnvSecretStripping:
      """codex app-server routes its spawn env through hermes_subprocess_env(
 diff --git a/tests/run_agent/test_codex_app_server_integration.py b/tests/run_agent/test_codex_app_server_integration.py
-index df16807..ab7d59b 100644
+index df16807..6410be6 100644
 --- a/tests/run_agent/test_codex_app_server_integration.py
 +++ b/tests/run_agent/test_codex_app_server_integration.py
-@@ -71,6 +71,51 @@ class TestApiModeAccepted:
+@@ -71,6 +71,126 @@ class TestApiModeAccepted:
          assert agent.api_mode == "codex_app_server"
  
  
@@ -564,6 +599,81 @@ index df16807..ab7d59b 100644
 +            {"role": "user", "content": "ok triển khai"},
 +        ]) is True
 +
++    @pytest.mark.parametrize(
++        "approval",
++        [
++            "phê duyệt triển khai",
++            "Phê duyệt triển khai",
++            "phe duyet trien khai",
++            "xác nhận triển khai",
++            "cho phép triển khai",
++            "cho phép thực thi",
++            "tiến hành đi",
++            "cứ làm đi",
++            "thực hiện đi",
++            "triển khai đi",
++        ],
++    )
++    def test_vietnamese_approval_variants_authorize_immediately(self, approval):
++        from agent.codex_runtime import _confirmation_gate_is_approved
++
++        assert _confirmation_gate_is_approved(
++            approval,
++            [{"role": "assistant", "content": "Kế hoạch...\nNEEDS_CONFIRMATION"}],
++        ) is True
++
++    @pytest.mark.parametrize(
++        "denial",
++        [
++            "không phê duyệt triển khai",
++            "chưa phê duyệt",
++            "đừng triển khai",
++            "không làm",
++            "chưa làm",
++        ],
++    )
++    def test_vietnamese_denials_never_authorize(self, denial):
++        from agent.codex_runtime import _confirmation_gate_is_approved
++
++        assert _confirmation_gate_is_approved(
++            denial,
++            [{"role": "assistant", "content": "Kế hoạch...\nNEEDS_CONFIRMATION"}],
++        ) is False
++
++    def test_approval_uses_nearest_confirmation_plan_across_status_messages(self):
++        from agent.codex_runtime import _confirmation_gated_codex_input
++
++        got = _confirmation_gated_codex_input(
++            "phê duyệt triển khai",
++            [
++                {"role": "user", "content": "Refactor motion"},
++                {"role": "assistant", "content": "APPROVED PLAN A\nNEEDS_CONFIRMATION"},
++                {"role": "assistant", "content": "Status: waiting for your reply"},
++                {"role": "user", "content": "phê duyệt triển khai"},
++            ],
++        )
++        assert "CONFIRMATION_GATE: APPROVED_SCOPE" in got
++        assert "APPROVED PLAN A" in got
++
++    def test_gate_directives_forbid_unsolicited_plan_artifacts(self):
++        from agent.codex_runtime import _confirmation_gated_codex_input
++
++        plan_only = _confirmation_gated_codex_input(
++            "Refactor motion", [{"role": "user", "content": "Refactor motion"}]
++        )
++        approved = _confirmation_gated_codex_input(
++            "phê duyệt triển khai",
++            [
++                {"role": "user", "content": "Refactor motion"},
++                {"role": "assistant", "content": "Plan inline\nNEEDS_CONFIRMATION"},
++            ],
++        )
++        for prompt in (plan_only, approved):
++            assert "Do not create, update, attach, or resend" in prompt
++            assert "PLAN.md" in prompt
++            assert "PLANS.md" in prompt
++            assert ".hermes/plans" in prompt
++
 +    def test_delegated_literal_approval_bypasses_plan_only_gate(self):
 +        from agent.codex_runtime import _confirmation_gated_codex_input
 +
@@ -579,7 +689,7 @@ index df16807..ab7d59b 100644
  class TestRunConversationCodexPath:
      def test_run_conversation_returns_codex_shape(self, fake_session):
          agent = _make_codex_agent()
-@@ -367,6 +412,51 @@ class TestRunConversationCodexPath:
+@@ -367,6 +487,51 @@ class TestRunConversationCodexPath:
  
          assert captured["cwd"] == str(tmp_path)
  

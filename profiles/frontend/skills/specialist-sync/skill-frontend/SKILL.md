@@ -27,28 +27,30 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 
 ## Canonical Skill Set
 
-| Skill path | Skill name |
-|---|---|
-| `impeccable` | impeccable |
-| `frontend/repomix-explorer` | repomix-explorer |
-| `frontend/plan` | plan |
-| `frontend/next-best-practices` | next-best-practices |
-| `frontend/frontend-design` | frontend-design |
-| `frontend/design-taste-frontend` | design-taste-frontend |
-| `frontend/ui-ux-pro-max` | ui-ux-pro-max |
-| `frontend/frontend-marketing-sites` | frontend-marketing-sites |
-| `frontend/management-module-frontend-integration` | management-module-frontend-integration |
-| `frontend/operational-dashboard-implementation` | operational-dashboard-implementation |
-| `frontend/guestos-frontend-i18n` | guestos-frontend-i18n |
-| `frontend/node-inspect-debugger` | node-inspect-debugger |
-| `frontend/test-driven-development` | test-driven-development |
-| `frontend/systematic-debugging` | systematic-debugging |
-| `frontend/requesting-code-review` | requesting-code-review |
-| `frontend/simplify-code` | simplify-code |
-| `software-development/local-code-quality-gates` | local-code-quality-gates |
+| Skill path | Skill name | Description |
+|---|---|---|
+| `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
+| `impeccable` | impeccable | Use when designing, redesigning, auditing, polishing, or hardening frontend interfaces: UX hierarchy, accessibility, responsive behavior, visual taste, states, copy, and anti-slop refinement. |
+| `frontend/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
+| `frontend/plan` | plan | Use only for explicit `/plan` or explicit saved-plan artifact requests; normal confirmation plans stay inline and are not written or resent. |
+| `frontend/next-best-practices` | next-best-practices | Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling |
+| `frontend/frontend-design` | frontend-design | Use when creating distinctive production-grade web pages, components, dashboards, landing pages, or HTML/CSS/React UI that should look polished rather than generic. |
+| `frontend/design-taste-frontend` | design-taste-frontend | Use when building, redesigning, or reviewing frontend experiences that need stronger taste, anti-template design direction, hierarchy, and interface polish. |
+| `frontend/ui-ux-pro-max` | ui-ux-pro-max | Use when planning, building, reviewing, or improving web/mobile UI/UX across design styles, palettes, accessibility, layouts, components, charts, and product patterns. |
+| `frontend/frontend-marketing-sites` | frontend-marketing-sites | Build or redesign public marketing websites and landing pages inside an existing web app without breaking product/auth routes. |
+| `frontend/management-module-frontend-integration` | management-module-frontend-integration | Implement management/admin module frontend integrations for CRUD lists, synchronization actions, and file imports against existing backend/internal API layers. |
+| `frontend/operational-dashboard-implementation` | operational-dashboard-implementation | Build operational dashboards that help staff decide what to do next, with domain-oriented aggregate APIs and actionable frontend sections. |
+| `frontend/guestos-frontend-i18n` | guestos-frontend-i18n | Add frontend-only multilingual support to GuestOS/guest-facing flows without touching admin/owner/staff pages or backend translation APIs. |
+| `frontend/node-inspect-debugger` | node-inspect-debugger | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. |
+| `frontend/test-driven-development` | test-driven-development | TDD: enforce RED-GREEN-REFACTOR, tests before code. |
+| `frontend/systematic-debugging` | systematic-debugging | 4-phase root cause debugging: understand bugs before fixing. |
+| `frontend/requesting-code-review` | requesting-code-review | Pre-commit review: security scan, quality gates, auto-fix. |
+| `frontend/simplify-code` | simplify-code | Parallel 3-agent cleanup of recent code changes. |
+| `software-development/local-code-quality-gates` | local-code-quality-gates | Use when setting up or running local static-analysis quality gates for code review, especially SonarQube-in-Docker review gates for frontend/backend cleanliness checks. |
 
 ## Operating Policy
 
+- The confirmation gate applies to direct user chats as well as Kanban: inspect read-only, present a pro-max plan, and wait for explicit approval before any side effect.
 - Use repomix-explorer before planning or implementation on unfamiliar/large repositories.
 - Use impeccable for frontend interface work that involves design, redesign, critique, audit, polish, UX hierarchy, accessibility, responsive behavior, product UI, dashboards, app shells, components, forms, empty/error/loading states, or anti-AI-slop hardening.
 - Own frontend UI, Next.js conventions, accessibility, UX polish, integration with backend/internal APIs, and frontend tests.
@@ -70,13 +72,13 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 The current synchronization source is the default profile skill tree:
 
 ```text
-C:/Users/Admin/AppData/Local/hermes/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/skills
 ```
 
 The synchronized specialist profile target is:
 
 ```text
-C:/Users/Admin/.hermes/profiles/frontend/skills
+C:/Users/Dangminhdev0403/AppData/Local/hermes/profiles/frontend/skills
 ```
 
 ## Example Skill Flags
@@ -88,3 +90,13 @@ When creating a kanban task, attach only the skills relevant to the specific car
 ```
 
 Do not blindly attach every skill if a narrower task only needs a subset.
+
+
+Fast selection index for this specialist is generated at:
+
+```text
+C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\frontend\skills\SKILL_DESCRIPTIONS.md
+```
+## Inline Plan Artifact Policy
+
+The approved inline chat plan is the execution contract. Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requested a saved plan artifact. A clear approval such as `phê duyệt triển khai` must authorize the existing plan immediately without a second confirmation loop.

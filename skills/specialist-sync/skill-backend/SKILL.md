@@ -31,7 +31,7 @@ This manifest keeps the `backend` specialist profile synchronized with the skill
 |---|---|---|
 | `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `backend/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
-| `backend/plan` | plan | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
+| `backend/plan` | plan | Use only for explicit `/plan` or explicit saved-plan artifact requests; normal confirmation plans stay inline and are not written or resent. |
 | `backend/nestjs-backend-integrations` | nestjs-backend-integrations | Implement external service integrations in NestJS/Prisma backends as asynchronous side effects without breaking core business writes. |
 | `backend/backend-i18n` | backend-i18n | Design and implement backend multilingual support for API messages and database-backed content, especially NestJS/Prisma service catalog domains. |
 | `backend/rbac-access-control-refactoring` | rbac-access-control-refactoring | Refactor role/permission systems from route-level RBAC toward business capability permissions with safer backend guards and simpler admin UIs. |
@@ -87,3 +87,6 @@ Fast selection index for this specialist is generated at:
 ```text
 C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\backend\skills\SKILL_DESCRIPTIONS.md
 ```
+## Inline Plan Artifact Policy
+
+The approved inline chat plan is the execution contract. Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requested a saved plan artifact. A clear approval such as `phê duyệt triển khai` must authorize the existing plan immediately without a second confirmation loop.

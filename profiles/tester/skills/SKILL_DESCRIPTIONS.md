@@ -1,8 +1,8 @@
 # Skill Selection Index
 
-Generated from skill names and frontmatter descriptions only.
+Generated from skill frontmatter. Select by name and description; load full SKILL.md only after selection.
 
-| Skill path | Skill name | Description |
+| Path | Name | Description |
 |---|---|---|
 | `autonomous-ai-agents/codex` | `codex` | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `backend/requesting-code-review` | `requesting-code-review` | Pre-commit review: security scan, quality gates, auto-fix. |

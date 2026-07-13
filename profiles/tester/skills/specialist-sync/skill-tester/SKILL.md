@@ -29,8 +29,10 @@ This manifest keeps the `tester` specialist profile synchronized with the skills
 
 | Skill path | Skill name | Description |
 |---|---|---|
+| `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `dogfood` | dogfood | Exploratory QA of web apps: find bugs, evidence, reports. |
 | `software-development/local-code-quality-gates` | local-code-quality-gates | Use when setting up or running local static-analysis quality gates for code review, especially SonarQube-in-Docker review gates for frontend/backend cleanliness checks. |
+| `software-development/multi-language-code-review` | multi-language-code-review | Use when the user asks Hermes or tester to check security, review code, audit a repo/module, or design a security flow across languages/stacks. Detects stack, selects safe quality/security gates, uses SecurityLab artifacts, and decides when recon-skills, DockerScan, or Ghidra/GhidraGPT are appropriate. |
 | `sonarqube-scanner-skill` | SonarQube Scanner Skill | Use when running explicit code-review/tester verification with a local Docker SonarQube quality gate. Ensures SonarQube Community runs in Docker, runs sonar-scanner via Docker, reads quality gate/issues from the Web API, and maps findings to source lines for review notes. |
 | `backend/requesting-code-review` | requesting-code-review | Pre-commit review: security scan, quality gates, auto-fix. |
 | `backend/test-driven-development` | test-driven-development | TDD: enforce RED-GREEN-REFACTOR, tests before code. |
@@ -42,7 +44,11 @@ This manifest keeps the `tester` specialist profile synchronized with the skills
 
 ## Operating Policy
 
-- Own QA, regression checks, exploratory web testing, code cleanliness review, and independent verification.
+- The confirmation gate applies to direct user chats as well as Kanban: inspect read-only, present a pro-max plan, and wait for explicit approval before any side effect.
+- Own QA, regression checks, exploratory web testing, code cleanliness review, security review, and independent verification.
+- Prefer Lightpanda MCP for text/DOM browser automation, crawling, extraction, and non-visual web checks; use Chrome/Chromium only when screenshot, visual QA, or complex rendering is required. See `references/lightpanda-browser-policy.md`.
+- When Lightpanda is available through Docker/MCP but not as a native PATH binary, use the Docker-backed PATH shim and auth smoke pattern in `references/lightpanda-docker-path-and-auth-smoke.md` instead of treating it as missing. For auth checks, combine DOM proof with session/API evidence and redact credentials/tokens/cookies from logs.
+- When explicitly assigned security review, security-flow review, audit, or multi-language repo/module review, use `multi-language-code-review` to classify the lane, select gates, and separate confirmed findings from tool-only candidates.
 - When explicitly assigned code review/tester verification for frontend/backend code, run the local SonarQube review gate via ~/AppData/Local/hermes/scripts/sonarqube-review.sh.
 - Do not modify implementation code unless explicitly assigned a fix task; report blockers with evidence.
 - If a tester task stays `todo`, first check whether its implementation parent is stuck in `blocked review-required`. Tester cannot run until the parent is `done`; ask the orchestrator to complete the parent handoff or promote the tester only after the dependency is intentionally resolved.
@@ -75,7 +81,7 @@ C:/Users/Dangminhdev0403/AppData/Local/hermes/profiles/tester/skills
 When creating a kanban task, attach only the skills relevant to the specific card. Example full set:
 
 ```bash
---skill dogfood --skill local-code-quality-gates --skill sonarqube-scanner-skill --skill requesting-code-review --skill test-driven-development --skill systematic-debugging --skill github-code-review --skill codebase-inspection --skill next-best-practices --skill design-taste-frontend
+--skill dogfood --skill multi-language-code-review --skill local-code-quality-gates --skill sonarqube-scanner-skill --skill requesting-code-review --skill test-driven-development --skill systematic-debugging --skill github-code-review --skill codebase-inspection --skill next-best-practices --skill design-taste-frontend
 ```
 
 Do not blindly attach every skill if a narrower task only needs a subset.
@@ -86,3 +92,6 @@ Fast selection index for this specialist is generated at:
 ```text
 C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\tester\skills\SKILL_DESCRIPTIONS.md
 ```
+## Inline Plan Artifact Policy
+
+The approved inline chat plan is the execution contract. Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requested a saved plan artifact. A clear approval such as `phê duyệt triển khai` must authorize the existing plan immediately without a second confirmation loop.

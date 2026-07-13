@@ -58,10 +58,13 @@ All four use `http://127.0.0.1:20128/v1`, `provider: custom`,
    ```
 
 7. Start/restart the four specialist gateways and run a two-step behavior
-   smoke test. Before approval, a file-write request must return a plan ending
-   in `NEEDS_CONFIRMATION` and create nothing. After replying `ok triển khai`
-   in the same Hermes session, the exact approved artifact must be created and
-   read back without a second Codex approval prompt.
+   smoke test. Before approval, a file-write request must return an inline plan
+   ending in `NEEDS_CONFIRMATION`, create nothing, and create/attach no
+   `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` artifact unless explicitly
+   requested. Reply once with `phê duyệt triển khai` in the same Hermes
+   session. The exact approved artifact must then be created and read back
+   immediately, without another `PLAN_ONLY` response or a second Codex
+   approval prompt.
 
 ## Security and portability
 

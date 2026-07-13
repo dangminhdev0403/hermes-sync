@@ -1,8 +1,8 @@
 # Skill Selection Index
 
-Generated from skill names and frontmatter descriptions only.
+Generated from skill frontmatter. Select by name and description; load full SKILL.md only after selection.
 
-| Skill path | Skill name | Description |
+| Path | Name | Description |
 |---|---|---|
 | `autonomous-ai-agents/codex` | `codex` | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `azure-kubernetes` | `azure-kubernetes` | Plan, create, and configure production-ready Azure Kubernetes Service (AKS) clusters. Covers Day-0 checklist, SKU selection (Automatic vs Standard), networking options (private API server, Azure CNI Overlay, egress configuration), security, and operations (autoscaling, upgrade strategy, cost analysis). WHEN: create AKS environment, provision AKS, enable AKS observability, design AKS networking, choose AKS SKU, secure AKS, optimize AKS, AKS spot nodes, AKS cluster-autoscaler, rightsize AKS pod, pod rightsizing, over-provisioned AKS pod, pod resource requests and limits, Vertical Pod Autoscaler, VPA recommendations. |

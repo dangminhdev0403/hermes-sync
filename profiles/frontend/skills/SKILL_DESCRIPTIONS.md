@@ -1,8 +1,8 @@
 # Skill Selection Index
 
-Generated from skill names and frontmatter descriptions only.
+Generated from skill frontmatter. Select by name and description; load full SKILL.md only after selection.
 
-| Skill path | Skill name | Description |
+| Path | Name | Description |
 |---|---|---|
 | `autonomous-ai-agents/codex` | `codex` | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `impeccable` | `impeccable` | Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks. |
@@ -17,7 +17,7 @@ Generated from skill names and frontmatter descriptions only.
 | `software-development/next-best-practices` | `next-best-practices` | Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling |
 | `software-development/node-inspect-debugger` | `node-inspect-debugger` | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. |
 | `software-development/operational-dashboard-implementation` | `operational-dashboard-implementation` | Build operational dashboards that help staff decide what to do next, with domain-oriented aggregate APIs and actionable frontend sections. |
-| `software-development/plan` | `plan` | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
+| `software-development/plan` | `plan` | Use only when the user explicitly invokes /plan or explicitly requests a saved implementation-plan artifact. Writes an actionable markdown plan to .hermes/plans/ without implementation. |
 | `software-development/rbac-access-control-refactoring` | `rbac-access-control-refactoring` | Refactor role/permission systems from route-level RBAC toward business capability permissions with safer backend guards and simpler admin UIs. |
 | `software-development/repomix-explorer` | `repomix-explorer` | \| |
 | `software-development/requesting-code-review` | `requesting-code-review` | Pre-commit review: security scan, quality gates, auto-fix. |

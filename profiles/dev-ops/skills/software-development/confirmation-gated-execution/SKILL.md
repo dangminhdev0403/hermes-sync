@@ -36,6 +36,7 @@ Do **not** use this skill to delay purely informational answers with no side eff
 5. **List verification.** Include exact tests, smoke checks, or filesystem checks that prove success.
 6. **Ask for confirmation.** End with a clear question such as: “Xác nhận cho tôi thực thi plan này không?”
 7. **Wait.** If the user asks a question or changes constraints, update the proposal. Execute only after explicit approval such as “ok”, “chấp nhận”, “làm đi”, or equivalent.
+8. **Use the inline plan as the contract.** Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly asked for a saved plan artifact. After approval, implement directly from the approved chat plan.
 
 ## External CLI / Local Agent Installation Proposals
 

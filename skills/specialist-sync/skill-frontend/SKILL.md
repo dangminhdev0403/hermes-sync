@@ -32,7 +32,7 @@ This manifest keeps the `frontend` specialist profile synchronized with the skil
 | `software-development/confirmation-gated-execution` | confirmation-gated-execution | Use when a normal chat request may execute commands, edit code/files, configure local services, improve work products, fix bugs, or assign specialists/đệ. Enforces a pro-max proposal and explicit user confirmation before side effects. |
 | `impeccable` | impeccable | Use when designing, redesigning, auditing, polishing, or hardening frontend interfaces: UX hierarchy, accessibility, responsive behavior, visual taste, states, copy, and anti-slop refinement. |
 | `frontend/repomix-explorer` | repomix-explorer | Use when exploring an unfamiliar or large local/remote codebase for structure, patterns, metrics, or broad discovery before planning; not for targeted edits or known-file lookups. |
-| `frontend/plan` | plan | Plan mode: write an actionable markdown plan to .hermes/plans/, no execution. Bite-sized tasks, exact paths, complete code. |
+| `frontend/plan` | plan | Use only for explicit `/plan` or explicit saved-plan artifact requests; normal confirmation plans stay inline and are not written or resent. |
 | `frontend/next-best-practices` | next-best-practices | Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling |
 | `frontend/frontend-design` | frontend-design | Use when creating distinctive production-grade web pages, components, dashboards, landing pages, or HTML/CSS/React UI that should look polished rather than generic. |
 | `frontend/design-taste-frontend` | design-taste-frontend | Use when building, redesigning, or reviewing frontend experiences that need stronger taste, anti-template design direction, hierarchy, and interface polish. |
@@ -97,3 +97,6 @@ Fast selection index for this specialist is generated at:
 ```text
 C:\Users\Dangminhdev0403\AppData\Local\hermes\profiles\frontend\skills\SKILL_DESCRIPTIONS.md
 ```
+## Inline Plan Artifact Policy
+
+The approved inline chat plan is the execution contract. Do not create, update, attach, list, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requested a saved plan artifact. A clear approval such as `phê duyệt triển khai` must authorize the existing plan immediately without a second confirmation loop.
