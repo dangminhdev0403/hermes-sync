@@ -1,5 +1,5 @@
 diff --git a/agent/codex_runtime.py b/agent/codex_runtime.py
-index 2077d2f..fa35d5e 100644
+index 2077d2f..2589301 100644
 --- a/agent/codex_runtime.py
 +++ b/agent/codex_runtime.py
 @@ -18,13 +18,157 @@ from __future__ import annotations
@@ -160,7 +160,15 @@ index 2077d2f..fa35d5e 100644
  def _codex_note_to_tool_progress(note: dict) -> tuple[str, str, dict] | None:
      """Map a Codex app-server ``item/started`` notification to a Hermes
      tool-progress event ``(tool_name, preview, args)``.
-@@ -372,8 +516,40 @@ def run_codex_app_server_turn(
+@@ -306,6 +450,7 @@ def run_codex_app_server_turn(
+     messages: List[Dict[str, Any]],
+     effective_task_id: str,
+     should_review_memory: bool = False,
++    _post_tool_recovery_attempted: bool = False,
+ ) -> Dict[str, Any]:
+     """Codex app-server runtime path. Hands the entire turn to a `codex
+     app-server` subprocess and projects its events back into Hermes'
+@@ -372,8 +517,40 @@ def run_codex_app_server_turn(
              except Exception:
                  logger.debug("codex tool-progress callback raised", exc_info=True)
  
@@ -201,7 +209,7 @@ index 2077d2f..fa35d5e 100644
              approval_callback=approval_callback,
              request_routing=_ServerRequestRouting(
                  auto_approve_exec=auto_approve_requests,
-@@ -386,8 +562,35 @@ def run_codex_app_server_turn(
+@@ -386,8 +563,35 @@ def run_codex_app_server_turn(
      # standard run_conversation() flow (line ~11823) before the early
      # return reaches us. Do NOT append again — that would duplicate.
  
@@ -238,7 +246,7 @@ index 2077d2f..fa35d5e 100644
      except Exception as exc:
          logger.exception("codex app-server turn failed")
          # Crash → unconditionally drop the session so the next turn
-@@ -408,6 +611,10 @@ def run_codex_app_server_turn(
+@@ -408,12 +612,25 @@ def run_codex_app_server_turn(
              "partial": True,
              "error": str(exc),
          }
@@ -249,6 +257,82 @@ index 2077d2f..fa35d5e 100644
  
      # If the turn signalled the underlying client is wedged (deadline
      # blown, post-tool watchdog tripped, OAuth refresh died, subprocess
+-    # exited), retire the session so the next turn respawns codex
+-    # rather than riding the broken process. Mirrors openclaw beta.8's
+-    # "retire timed-out app-server clients" fix.
++    # exited), retire the session rather than riding the broken process.
++    # Approved turns that became silent *after* a completed tool get one
++    # bounded recovery on a fresh Codex thread. The recovery receives the
++    # projected tool evidence and must inspect current state before continuing;
++    # it is explicitly forbidden from blindly repeating the side effect.
++    post_tool_silence = (
++        bool(getattr(turn, "should_retire", False))
++        and "went silent" in str(getattr(turn, "error", "") or "").lower()
++        and "after a tool result" in str(getattr(turn, "error", "") or "").lower()
++        and getattr(turn, "tool_iterations", 0) > 0
++        and bool(getattr(turn, "projected_messages", None))
++    )
+     if getattr(turn, "should_retire", False):
+         logger.warning(
+             "codex app-server session retired (turn error: %s)",
+@@ -425,6 +642,57 @@ def run_codex_app_server_turn(
+             pass
+         agent._codex_session = None
+ 
++    if (
++        confirmation_gate_approved
++        and post_tool_silence
++        and not _post_tool_recovery_attempted
++    ):
++        # Preserve the exact command/file-change result in Hermes history before
++        # spawning the replacement thread. This is evidence, not permission to
++        # replay the operation.
++        if turn.projected_messages:
++            messages.extend(turn.projected_messages)
++            if getattr(agent, "_session_db", None) is not None:
++                try:
++                    agent._flush_messages_to_session_db(messages)
++                except Exception:
++                    logger.debug(
++                        "codex post-tool recovery evidence flush failed",
++                        exc_info=True,
++                    )
++        import json
++
++        evidence = json.dumps(
++            turn.projected_messages,
++            ensure_ascii=False,
++            default=str,
++        )
++        recovery_prompt = f"""CHO PHÉP SỬA
++<post_tool_silence_recovery>
++POST_TOOL_SILENCE_RECOVERY: APPROVED_SCOPE
++The previous Codex thread became silent after a tool completed and has been retired.
++The user already approved the plan. Continue now on this fresh thread without asking again.
++Do not repeat any command, patch, write, migration, deployment, or other side effect merely because the prior thread failed to finish. First inspect current state and the recorded tool result, determine what already happened, then continue only the unfinished work and verify the final state.
++This recovery is allowed once only.
++Approved scope replay from the interrupted turn:
++{codex_user_input}
++Recorded projected tool evidence:
++{evidence or '[tool completed; no projected evidence was available]'}
++</post_tool_silence_recovery>
++"""
++        logger.warning(
++            "codex app-server starting one-shot post-tool recovery on a fresh session"
++        )
++        return run_codex_app_server_turn(
++            agent,
++            user_message=recovery_prompt,
++            original_user_message=original_user_message,
++            messages=messages,
++            effective_task_id=effective_task_id,
++            should_review_memory=should_review_memory,
++            _post_tool_recovery_attempted=True,
++        )
++
+     # Splice projected messages into the conversation. The projector emits
+     # standard {role, content, tool_calls, tool_call_id} entries, which
+     # is exactly what curator.py / sessions DB expect.
 diff --git a/agent/transports/codex_app_server.py b/agent/transports/codex_app_server.py
 index 273e446..e6b8387 100644
 --- a/agent/transports/codex_app_server.py
@@ -588,7 +672,7 @@ index 5c1c9bd..92fa34f 100644
  class TestSpawnEnvSecretStripping:
      """codex app-server routes its spawn env through hermes_subprocess_env(
 diff --git a/tests/run_agent/test_codex_app_server_integration.py b/tests/run_agent/test_codex_app_server_integration.py
-index df16807..ba5581f 100644
+index df16807..7dc7044 100644
 --- a/tests/run_agent/test_codex_app_server_integration.py
 +++ b/tests/run_agent/test_codex_app_server_integration.py
 @@ -71,6 +71,187 @@ class TestApiModeAccepted:
@@ -831,3 +915,178 @@ index df16807..ba5581f 100644
      def _capture_routing_agent(self, monkeypatch):
          """Build a codex agent with a CodexAppServerSession stub that captures
          the request_routing passed at construction time, so we can assert how
+@@ -647,6 +873,174 @@ class TestSessionRetirementOnRunAgent:
+         assert result["partial"] is True
+         assert result["error"] == "turn timed out after 600.0s"
+ 
++    def test_approved_post_tool_silence_recovers_once_without_repeating_side_effect(
++        self, monkeypatch
++    ):
++        calls = []
++
++        def fake_run_turn(self, user_input, **kwargs):
++            calls.append(user_input)
++            if len(calls) == 1:
++                return TurnResult(
++                    final_text="",
++                    projected_messages=[
++                        {
++                            "role": "assistant",
++                            "content": None,
++                            "tool_calls": [{
++                                "id": "exec-1",
++                                "type": "function",
++                                "function": {
++                                    "name": "exec_command",
++                                    "arguments": '{"cmd":"write-once"}',
++                                },
++                            }],
++                        },
++                        {
++                            "role": "tool",
++                            "tool_call_id": "exec-1",
++                            "content": "file now exists",
++                        },
++                    ],
++                    tool_iterations=1,
++                    interrupted=True,
++                    error="codex went silent for 90s after a tool result; retiring app-server session.",
++                    should_retire=True,
++                    thread_id="wedged-thread",
++                    turn_id="wedged-turn",
++                )
++            return TurnResult(
++                final_text="Recovered and verified current state",
++                projected_messages=[{
++                    "role": "assistant",
++                    "content": "Recovered and verified current state",
++                }],
++                tool_iterations=1,
++                thread_id="recovery-thread",
++                turn_id="recovery-turn",
++            )
++
++        monkeypatch.setattr(CodexAppServerSession, "run_turn", fake_run_turn)
++        monkeypatch.setattr(
++            CodexAppServerSession, "ensure_started", lambda self: "thread"
++        )
++        monkeypatch.setattr(
++            "hermes_cli.config.load_config",
++            lambda: {"agent": {"confirmation_gate": True}, "model": {}},
++        )
++
++        from agent.codex_runtime import run_codex_app_server_turn
++
++        agent = _make_codex_agent()
++        messages = [
++            {"role": "user", "content": "Create the approved artifact"},
++            {"role": "assistant", "content": "Plan inline\nNEEDS_CONFIRMATION"},
++            {"role": "user", "content": "approve"},
++        ]
++        with patch.object(agent, "_spawn_background_review", return_value=None):
++            result = run_codex_app_server_turn(
++                agent,
++                user_message="approve",
++                original_user_message="approve",
++                messages=messages,
++                effective_task_id="recovery-test",
++            )
++
++        assert result["completed"] is True
++        assert result["error"] is None
++        assert result["final_response"] == "Recovered and verified current state"
++        assert len(calls) == 2
++        assert "APPROVED_SCOPE" in calls[0]
++        assert "POST_TOOL_SILENCE_RECOVERY" in calls[1]
++        assert "Do not repeat" in calls[1]
++        assert "file now exists" in calls[1]
++        assert agent._codex_session is not None
++
++    def test_post_tool_recovery_is_bounded_to_one_fresh_thread(self, monkeypatch):
++        calls = []
++
++        def always_silent(self, user_input, **kwargs):
++            calls.append(user_input)
++            return TurnResult(
++                projected_messages=[{
++                    "role": "tool",
++                    "tool_call_id": "exec-1",
++                    "content": "current state changed",
++                }],
++                tool_iterations=1,
++                interrupted=True,
++                error="codex went silent for 90s after a tool result; retiring app-server session.",
++                should_retire=True,
++                thread_id=f"th-{len(calls)}",
++                turn_id=f"tu-{len(calls)}",
++            )
++
++        monkeypatch.setattr(CodexAppServerSession, "run_turn", always_silent)
++        monkeypatch.setattr(
++            CodexAppServerSession, "ensure_started", lambda self: "thread"
++        )
++        monkeypatch.setattr(
++            "hermes_cli.config.load_config",
++            lambda: {"agent": {"confirmation_gate": True}, "model": {}},
++        )
++        from agent.codex_runtime import run_codex_app_server_turn
++
++        agent = _make_codex_agent()
++        messages = [
++            {"role": "assistant", "content": "Plan inline\nNEEDS_CONFIRMATION"},
++            {"role": "user", "content": "approve"},
++        ]
++        result = run_codex_app_server_turn(
++            agent,
++            user_message="approve",
++            original_user_message="approve",
++            messages=messages,
++            effective_task_id="bounded-recovery-test",
++        )
++
++        assert len(calls) == 2
++        assert "POST_TOOL_SILENCE_RECOVERY" in calls[1]
++        assert result["partial"] is True
++        assert agent._codex_session is None
++
++    def test_post_tool_retirement_without_approved_scope_does_not_recover(
++        self, monkeypatch
++    ):
++        calls = []
++
++        def fake_run_turn(self, user_input, **kwargs):
++            calls.append(user_input)
++            return TurnResult(
++                projected_messages=[{
++                    "role": "tool",
++                    "tool_call_id": "exec-1",
++                    "content": "partial",
++                }],
++                tool_iterations=1,
++                interrupted=True,
++                error="codex went silent for 90s after a tool result; retiring app-server session.",
++                should_retire=True,
++                thread_id="th",
++                turn_id="tu",
++            )
++
++        monkeypatch.setattr(CodexAppServerSession, "run_turn", fake_run_turn)
++        monkeypatch.setattr(
++            CodexAppServerSession, "ensure_started", lambda self: "thread"
++        )
++        monkeypatch.setattr(
++            "hermes_cli.config.load_config",
++            lambda: {"agent": {"confirmation_gate": True}, "model": {}},
++        )
++
++        agent = _make_codex_agent()
++        with patch.object(agent, "_spawn_background_review", return_value=None):
++            result = agent.run_conversation("Create something")
++
++        assert result["partial"] is True
++        assert len(calls) == 1
++        assert agent._codex_session is None
++
+     def test_normal_turn_keeps_session(self, fake_session):
+         """fake_session fixture returns should_retire=False (default).
+         The session must stay attached for the next turn to reuse."""

@@ -67,6 +67,14 @@ All four use `http://127.0.0.1:20128/v1`, `provider: custom`,
    turn, execute, and read back the exact artifact without another confirmation
    prompt. Denial/hold intent must remain fail-closed, and approval wording
    without a preceding `NEEDS_CONFIRMATION` boundary must not authorize work.
+8. Verify post-tool silence recovery. If an approved Codex turn completes at
+   least one tool operation but the app-server becomes silent and is retired,
+   Hermes starts one fresh Codex thread automatically. The recovery receives
+   the approved-scope replay plus projected tool evidence, must inspect current
+   state instead of blindly repeating a command/write/deployment, continues only
+   unfinished work, and verifies the result. Recovery is bounded to one fresh
+   thread; auth failures, pre-tool crashes/timeouts, and unapproved turns remain
+   fail-closed and are not retried automatically.
 
 ## Security and portability
 
