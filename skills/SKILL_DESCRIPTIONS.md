@@ -1,14 +1,9 @@
-# Default Hermes Skill Descriptions
+# Skill Descriptions
 
-Generated index of skill frontmatter descriptions. Use this file for fast skill selection; only open the full `SKILL.md` after the description matches the task.
-
-- Source root: `C:\Users\Admin\AppData\Local\hermes\skills`
-- Generated: `20260708-104913`
-- Skill count: `113`
+Frontmatter-only index for selecting skills without loading full `SKILL.md` files.
 
 | Skill path | Skill name | Description |
 |---|---|---|
-| `.backup-sonarqube-scanner-20260707023119` | SonarQube Scanner Skill | Integrates SonarQube static analysis via the sonar-scanner CLI and SonarQube Web API. Fetches quality gate results from api/qualitygates/project_status, parses issues via api/issues/search, and maps findings to source lines for inline code review annotations. |
 | `autonomous-ai-agents/claude-code` | claude-code | Delegate coding to Claude Code CLI (features, PRs). |
 | `autonomous-ai-agents/codex` | codex | Delegate coding to OpenAI Codex CLI (features, PRs). |
 | `autonomous-ai-agents/hermes-agent` | hermes-agent | Configure, extend, or contribute to Hermes Agent. |
@@ -115,7 +110,7 @@ Generated index of skill frontmatter descriptions. Use this file for fast skill 
 | `software-development/spike` | spike | Throwaway experiments to validate an idea before build. |
 | `software-development/systematic-debugging` | systematic-debugging | 4-phase root cause debugging: understand bugs before fixing. |
 | `software-development/test-driven-development` | test-driven-development | TDD: enforce RED-GREEN-REFACTOR, tests before code. |
-| `sonarqube-scanner-skill` | SonarQube Scanner Skill | Integrates SonarQube static analysis via the sonar-scanner CLI and SonarQube Web API. Fetches quality gate results from api/qualitygates/project_status, parses issues via api/issues/search, and maps findings to source lines for inline code review annotations. |
+| `sonarqube-scanner-skill` | SonarQube Scanner Skill | Use when running explicit code-review/tester verification with a local Docker SonarQube quality gate. Ensures SonarQube Community runs in Docker, runs sonar-scanner via Docker, reads quality gate/issues from the Web API, and maps findings to source lines for review notes. |
 | `specialist-sync/skill-backend` | skill-backend | Use when synchronizing or assigning the backend specialist profile/deệ. Lists the canonical skills, responsibilities, and quality gates that must be considered before kanban delegation. |
 | `specialist-sync/skill-dev-ops` | skill-dev-ops | Use when synchronizing or assigning the dev-ops specialist profile/deệ. Lists the canonical skills, responsibilities, and quality gates that must be considered before kanban delegation. |
 | `specialist-sync/skill-frontend` | skill-frontend | Use when synchronizing or assigning the frontend specialist profile/deệ. Lists the canonical skills, responsibilities, and quality gates that must be considered before kanban delegation. |

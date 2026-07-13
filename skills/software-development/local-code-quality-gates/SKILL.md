@@ -49,14 +49,14 @@ Use Docker scanner instead of requiring host Java/sonar-scanner on Windows. Atta
    - Port `9000` is not already occupied.
    - Existing `sonarqube-local` container is inspected before replacing.
 
-2. **Start SonarQube**
-   - Pull `sonarqube:community`.
-   - Run with persistent named volumes for data, extensions, and logs.
-   - Use `--restart unless-stopped` for local durability.
+2. **Bootstrap SonarQube**
+   - Prefer the local helper bootstrap path when available: `~/AppData/Local/hermes/scripts/sonarqube-review.sh --bootstrap`.
+   - Bootstrap should pull `sonarqube:community`, create/start `sonarqube-local` with persistent data/extensions/logs volumes, attach `sonarqube-review-net`, and wait for `http://localhost:9000/api/system/status` to report `UP`.
+   - Use manual `docker run` only when the helper is unavailable or being repaired.
 
 3. **Wait for readiness**
    - Poll `http://localhost:9000/api/system/status` until `status` is `UP`.
-   - Do not report success while status is `STARTING`.
+   - Do not report success while status is `STARTING` or while only the TCP port is open.
 
 4. **Initialize credentials/token**
    - First login is usually `admin/admin`.
@@ -65,9 +65,12 @@ Use Docker scanner instead of requiring host Java/sonar-scanner on Windows. Atta
    - Store token in `~/AppData/Local/hermes/sonarqube/sonar.env`; do not print the full token in chat.
 
 5. **Create/reuse review helper**
-   - The helper should start SonarQube if needed, wait for readiness, run scanner in Docker, then query quality gate and unresolved issues.
+   - The helper should support a bootstrap-only mode for creating/starting SonarQube before a scanner token exists.
+   - For scans, it should auto-start Docker Desktop on Windows if `docker info` is unreachable, start SonarQube if needed, wait for readiness, run scanner in Docker, then query quality gate and unresolved issues.
+   - After scanner upload, retry quality-gate API reads briefly because Compute Engine may still be processing and can return an early `NONE` status.
    - It should write `.sonarqube-quality-gate.json` and `.sonarqube-issues.json` in the reviewed repo.
    - It should print a compact line: `SONAR_SUMMARY quality_gate=<status> unresolved_issues=<count>`.
+   - It should stop `sonarqube-local` after scan results are returned, unless `--keep-running` was passed or `--bootstrap` mode is used.
 
 6. **Verify with a real scan**
    - Create or use a small sample project.
@@ -131,14 +134,17 @@ Gaps: ...
 ## Reference Files
 
 - `references/sonarqube-local-review-stack.md` — concrete session-derived details for the local SonarQube Docker + scanner helper setup, verification output shape, and Kanban tester check.
+- `references/sonarqube-docker-bootstrap-and-gate-retry.md` — bootstrap-only helper pattern, token setup, container networking, and bounded quality-gate retry to avoid early `NONE` statuses.
 
 ## Verification Checklist
 
-- [ ] SonarQube container exists and is `Up`.
-- [ ] `curl http://localhost:9000/api/system/status` returns `status: UP`.
+- [ ] Docker daemon is reachable, or the helper auto-starts Docker Desktop and then Docker becomes reachable.
+- [ ] SonarQube container exists and is `Up` during scan/bootstrap.
+- [ ] `curl http://localhost:9000/api/system/status` returns `status: UP` during scan/bootstrap.
 - [ ] Scanner token exists in the local env file.
 - [ ] Docker scanner image is available or pullable.
 - [ ] Review helper is executable.
 - [ ] A real scan returns `ANALYSIS SUCCESSFUL` and `EXECUTION SUCCESS`.
 - [ ] `.sonarqube-quality-gate.json` and `.sonarqube-issues.json` are written.
+- [ ] Scan mode stops `sonarqube-local` after returning results unless `--keep-running` was used.
 - [ ] Review workflow/QA tester uses the gate only for explicit review tasks.
