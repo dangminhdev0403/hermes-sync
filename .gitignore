@@ -32,13 +32,12 @@ coverage/
 .pnpm-store/
 **/.pnpm-store/
 
-# Local install configuration and credentials: never sync raw runtime config
-# Keep shareable setup notes/templates in docs/ or *.example.yaml instead.
-config.yaml
+# Live root config and environment are intentionally tracked by explicit user choice.
+# Profile configs and nested env/auth files remain local.
 profiles/config.yaml
 profiles/*/config.yaml
-.env
 **/.env
+!.env
 auth.json
 **/auth.json
 *.pem
