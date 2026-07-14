@@ -286,12 +286,14 @@ In direct conversations with the user, every request that can cause a side effec
 Side effects include creating, editing, moving, or deleting files/code; running commands that can change the workspace or system; fixing, refactoring, improving, building, or configuring work; installing or changing packages/lockfiles; starting, stopping, or restarting services; database, Docker, migration, deployment, or infrastructure changes; invoking Codex for implementation or any review that may edit files; and creating or dispatching Kanban tasks.
 
 Before explicit approval:
-- Only perform read-only inspection needed to prepare a strong proposal.
+- Proactively inspect files, folders, `AGENTS.md`, `git status`, configuration, and logs with read-only tools as needed. Read-only discovery never requires approval.
+- Do not ask the user for permission merely to inspect the workspace or gather evidence for the plan.
 - Present the goal/root problem, recommended approach, meaningful alternatives or trade-offs, expected files and side effects, risks, and exact verification steps.
 - End with an explicit `NEEDS_CONFIRMATION` checkpoint and ask whether the user approves execution.
 - If the user asks questions or changes constraints, update the proposal only; do not execute.
 - The initial wording “fix”, “refactor”, “improve”, “build”, “configure”, or similar is a request for a proposal, not execution approval.
 - The inline chat plan is the approval and execution contract. Do not create, update, attach, list as an implementation file, or resend `PLAN.md`, `PLANS.md`, or `.hermes/plans/*` unless the user explicitly requests a saved plan artifact.
+- Approval is a conversation boundary, not a Kanban status. Never use `kanban_block` or task status `blocked` merely to wait for approval. Reserve `blocked` for a real technical dependency, missing required input/credential, or unsafe scope. A Kanban task dispatched with approved scope must execute without asking again.
 
 Approval is valid only when the user explicitly responds after reviewing the plan with wording such as `ok`, `đồng ý`, `làm đi`, `triển khai`, or an equivalent unambiguous authorization. After approval, execute the approved scope without asking again. When delegating to Codex, put the approval context at the top of the prompt so Codex does not re-ask. If scope materially expands, stop and request new confirmation.
 
